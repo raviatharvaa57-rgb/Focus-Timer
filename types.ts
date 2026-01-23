@@ -1,0 +1,25 @@
+
+export type AppTab = 'timer' | 'alarm' | 'stopwatch' | 'clock';
+
+export interface FocusTheme {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  bgGradient: string;
+}
+
+export interface AlarmItem {
+  id: string;
+  time: string;
+  label: string;
+  active: boolean;
+  days: string[];
+  sound: string;
+}
+
+export interface LapTime {
+  id: number;
+  time: number;
+  diff: number;
+}

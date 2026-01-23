@@ -1,0 +1,7 @@
+{
+  "name": "Focus Timer - A simple timer to focus, manage time, and relax.",
+  "description": "An elegant, Apple-inspired focus app featuring animated themes, countdown timers, alarms, stopwatches, and world clocks.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
