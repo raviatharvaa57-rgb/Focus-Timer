@@ -57,8 +57,8 @@ const Stopwatch: React.FC = () => {
           {formatTime(time)}
         </div>
         
-        {/* Buttons - Shifted Higher */}
-        <div className="flex items-center justify-center space-x-16 w-full max-w-xs mb-16 px-4">
+        {/* Buttons - Sized to match */}
+        <div className="flex items-center justify-center space-x-12 w-full max-w-xs mb-16 px-4">
           <button 
             onClick={handleLapReset}
             className="w-12 h-12 rounded-full apple-blur flex items-center justify-center text-white/40 border border-white/5 active:bg-white/10 active:scale-90 transition-all"
@@ -73,7 +73,7 @@ const Stopwatch: React.FC = () => {
           
           <button 
             onClick={handleStartStop}
-            className={`w-18 h-18 rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-all ${
+            className={`w-12 h-12 rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-all ${
               isRunning 
                 ? 'bg-white/10 text-white border border-white/20 apple-blur' 
                 : 'bg-white text-black shadow-white/10'
@@ -81,9 +81,9 @@ const Stopwatch: React.FC = () => {
             aria-label={isRunning ? "Stop" : "Start"}
           >
             {isRunning ? (
-              <Pause size={28} strokeWidth={1.5} fill="currentColor" />
+              <Pause size={20} strokeWidth={1.5} fill="currentColor" />
             ) : (
-              <Play size={28} className="ml-1" strokeWidth={1.5} fill="currentColor" />
+              <Play size={20} className="ml-1" strokeWidth={1.5} fill="currentColor" />
             )}
           </button>
         </div>

@@ -1,207 +1,124 @@
 
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Plus, Sparkles } from 'lucide-react';
+import { Play, Pause, RotateCcw, Plus } from 'lucide-react';
 import { FOCUS_THEMES } from '../constants';
 import ThemeAnimator from './ThemeAnimator';
-import { GoogleGenAI } from "@google/genai";
 
 const ThemeBackgroundFX: React.FC<{ themeId: string; isActive: boolean }> = ({ themeId, isActive }) => {
-  switch (themeId) {
-    case 'night':
-      return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(20)].map((_, i) => (
-            <div 
-              key={i} 
-              className="absolute bg-white rounded-full animate-pulse"
-              style={{
-                width: Math.random() * 2 + 'px',
-                height: Math.random() * 2 + 'px',
-                top: Math.random() * 100 + '%',
-                left: Math.random() * 100 + '%',
-                animationDelay: Math.random() * 5 + 's',
-                opacity: Math.random() * 0.5
-              }}
-            />
-          ))}
-        </div>
-      );
-    case 'forest':
-      return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(6)].map((_, i) => (
-            <div 
-              key={i} 
-              className="absolute text-green-900/20 text-4xl animate-[bounce_10s_infinite]"
-              style={{
-                top: '-10%',
-                left: Math.random() * 100 + '%',
-                animationDelay: i * 2 + 's',
-                transform: `rotate(${Math.random() * 360}deg)`
-              }}
-            >🍃</div>
-          ))}
-        </div>
-      );
-    case 'aquarium':
-    case 'ocean':
-      return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(10)].map((_, i) => (
-            <div 
-              key={i} 
-              className="absolute bg-white/10 rounded-full animate-[bounce_5s_infinite]"
-              style={{
-                width: Math.random() * 10 + 5 + 'px',
-                height: Math.random() * 10 + 5 + 'px',
-                bottom: '-5%',
-                left: Math.random() * 100 + '%',
-                animationDelay: Math.random() * 5 + 's',
-              }}
-            />
-          ))}
-        </div>
-      );
-    case 'campfire':
-      return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-orange-500/10 blur-[120px] rounded-full animate-pulse" />
-          {[...Array(12)].map((_, i) => (
-            <div 
-              key={i} 
-              className="absolute bg-orange-500 rounded-full w-1 h-1 animate-ping"
-              style={{
-                bottom: '20%',
-                left: (40 + Math.random() * 20) + '%',
-                animationDelay: Math.random() * 3 + 's',
-                opacity: 0.6
-              }}
-            />
-          ))}
-        </div>
-      );
-    case 'sun':
-      return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className={`absolute inset-0 bg-yellow-400/5 transition-opacity duration-1000 ${isActive ? 'opacity-100' : 'opacity-0'}`} />
-          {[...Array(5)].map((_, i) => (
-            <div 
-              key={i} 
-              className="absolute bg-yellow-200/20 blur-3xl rounded-full animate-pulse"
-              style={{
-                width: '300px',
-                height: '300px',
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                animationDelay: `${i * 1.5}s`
-              }}
-            />
-          ))}
-        </div>
-      );
-    case 'candle':
-      return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className={`absolute inset-0 bg-orange-500/5 transition-opacity duration-1000 ${isActive ? 'animate-[pulse_4s_infinite]' : 'opacity-0'}`} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle,rgba(255,150,0,0.1)_0%,transparent_70%)]" />
-        </div>
-      );
-    case 'snow':
-      return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(25)].map((_, i) => (
-            <div 
-              key={i} 
-              className="absolute bg-white rounded-full animate-[bounce_8s_infinite_linear]"
-              style={{
-                width: `${Math.random() * 4 + 2}px`,
-                height: `${Math.random() * 4 + 2}px`,
-                top: '-10%',
-                left: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 8}s`,
-                opacity: Math.random() * 0.6 + 0.2
-              }}
-            />
-          ))}
-        </div>
-      );
-    case 'chocolate':
-      return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 bg-amber-900/10" />
-          {[...Array(8)].map((_, i) => (
-            <div 
-              key={i} 
-              className="absolute bg-amber-950/20 blur-xl rounded-full animate-pulse"
-              style={{
-                width: '200px',
-                height: '200px',
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                animationDelay: `${i * 1.2}s`
-              }}
-            />
-          ))}
-        </div>
-      );
-    case 'art':
-      return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(12)].map((_, i) => (
-            <div 
-              key={i} 
-              className="absolute rounded-full mix-blend-screen animate-float"
-              style={{
-                width: `${Math.random() * 150 + 50}px`,
-                height: `${Math.random() * 150 + 50}px`,
-                backgroundColor: ['#CE93D8', '#4FC3F7', '#FFD54F', '#81C784'][i % 4] + '11',
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                animationDuration: `${Math.random() * 10 + 10}s`,
-                animationDelay: `${-Math.random() * 10}s`
-              }}
-            />
-          ))}
-        </div>
-      );
-    case 'sakura':
-      return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(15)].map((_, i) => (
-            <div 
-              key={i} 
-              className="absolute text-pink-300/40 text-2xl animate-[bounce_12s_infinite_linear]"
-              style={{
-                top: '-10%',
-                left: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 12}s`,
-                transform: `rotate(${Math.random() * 360}deg)`
-              }}
-            >🌸</div>
-          ))}
-        </div>
-      );
-    default:
-      return <div className="absolute inset-0 bg-black/20 pointer-events-none" />;
-  }
+  const [particles] = useState(() => [...Array(20)].map(() => ({
+    id: Math.random(),
+    left: Math.random() * 100,
+    top: Math.random() * 100,
+    duration: 5 + Math.random() * 10,
+    delay: Math.random() * 5,
+    size: 4 + Math.random() * 10
+  })));
+
+  const renderBackgroundElements = () => {
+    switch (themeId) {
+      case 'night':
+        return (
+          <>
+            {particles.map((p) => (
+              <div key={p.id} className="absolute bg-white rounded-full animate-pulse shadow-[0_0_8px_white]"
+                style={{ width: '2px', height: '2px', left: p.left + '%', top: p.top + '%', animationDelay: p.delay + 's', opacity: 0.5 }}
+              />
+            ))}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(100,100,255,0.1)_0%,transparent_70%)]" />
+          </>
+        );
+      case 'snow':
+        return (
+          <>
+            {particles.map((p) => (
+              <div key={p.id} className="absolute text-white/20 animate-[fall_12s_linear_infinite]"
+                style={{ left: p.left + '%', top: '-10%', animationDelay: p.delay + 's', fontSize: p.size + 'px' }}
+              >❄️</div>
+            ))}
+            <style>{`@keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }`}</style>
+          </>
+        );
+      case 'sakura':
+        return (
+          <>
+            {particles.map((p) => (
+              <div key={p.id} className="absolute text-pink-300/30 animate-[petal-fall_10s_linear_infinite]"
+                style={{ left: p.left + '%', top: '-10%', animationDelay: p.delay + 's', fontSize: '20px' }}
+              >🌸</div>
+            ))}
+            <style>{`@keyframes petal-fall { 0% { transform: translateY(0) rotate(0) translateX(0); } 100% { transform: translateY(110vh) rotate(720deg) translateX(100px); } }`}</style>
+          </>
+        );
+      case 'campfire':
+        return (
+          <>
+            {particles.map((p) => (
+              <div key={p.id} className="absolute w-1 h-1 bg-orange-500 rounded-full animate-[ember_4s_infinite_linear]"
+                style={{ left: p.left + '%', bottom: '0%', animationDelay: p.delay + 's', opacity: 0.6 }}
+              />
+            ))}
+            <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-orange-600/10 to-transparent" />
+            <style>{`@keyframes ember { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-100vh) translateX(${Math.random() * 100 - 50}px) scale(0); opacity: 0; } }`}</style>
+          </>
+        );
+      case 'ocean':
+      case 'aquarium':
+        return (
+          <>
+            {particles.map((p) => (
+              <div key={p.id} className="absolute bg-white/10 rounded-full animate-[bubble_6s_infinite_ease-in]"
+                style={{ width: p.size + 'px', height: p.size + 'px', left: p.left + '%', bottom: '-10%', animationDelay: p.delay + 's' }}
+              />
+            ))}
+            <div className="absolute inset-0 bg-gradient-to-b from-cyan-900/20 via-transparent to-cyan-500/10" />
+            <style>{`@keyframes bubble { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 50% { opacity: 0.4; } 100% { transform: translateY(-110vh) scale(1.2); opacity: 0; } }`}</style>
+          </>
+        );
+      case 'art':
+        return (
+          <div className="absolute inset-0 opacity-10">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="absolute w-full h-20 bg-gradient-to-r from-transparent via-white/20 to-transparent blur-3xl animate-[stroke-bg_8s_infinite_linear]"
+                style={{ top: `${i * 20}%`, animationDelay: `${i * 1.5}s` }}
+              />
+            ))}
+            <style>{`@keyframes stroke-bg { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }`}</style>
+          </div>
+        );
+      case 'sun':
+        return <div className="absolute inset-0 bg-gradient-to-t from-orange-500/20 via-transparent to-transparent animate-pulse duration-[5000ms]" />;
+      case 'forest':
+        return <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')] opacity-5 rotate-45 scale-150" />;
+      case 'coffee':
+        return <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(139,69,19,0.05)_0%,transparent_70%)]" />;
+      default:
+        return <div className="absolute inset-0 bg-black/40 transition-all duration-1000" />;
+    }
+  };
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none transition-all duration-1000">
+      {renderBackgroundElements()}
+    </div>
+  );
 };
 
 const Timer: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState(25 * 60);
+  const [totalTime, setTotalTime] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
   const [themeIndex, setThemeIndex] = useState(0);
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [customMins, setCustomMins] = useState(25);
-  const [mantra, setMantra] = useState<string>('');
-  const [isFetchingMantra, setIsFetchingMantra] = useState(false);
 
   const currentTheme = FOCUS_THEMES[themeIndex];
 
   useEffect(() => {
     const savedState = localStorage.getItem('focus_timer_state');
     if (savedState) {
-      const { time, active, lastTimestamp, themeIdx } = JSON.parse(savedState);
+      const { time, total, active, lastTimestamp, themeIdx } = JSON.parse(savedState);
       setThemeIndex(themeIdx || 0);
+      setTotalTime(total || time || 25 * 60);
       if (active) {
         const elapsed = Math.floor((Date.now() - lastTimestamp) / 1000);
         const remaining = Math.max(0, time - elapsed);
@@ -211,33 +128,12 @@ const Timer: React.FC = () => {
         setTimeLeft(time);
       }
     }
-    fetchMantra();
   }, []);
-
-  const fetchMantra = async () => {
-    setIsFetchingMantra(true);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Give me a short, inspiring 5-10 word productivity mantra or zen tip for a "${currentTheme.name}" theme. Don't use quotes.`,
-      });
-      setMantra(response.text || 'Focus on the present moment.');
-    } catch (error) {
-      console.error('Gemini error:', error);
-      setMantra('Deep breaths, deep work.');
-    } finally {
-      setIsFetchingMantra(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMantra();
-  }, [themeIndex]);
 
   useEffect(() => {
     localStorage.setItem('focus_timer_state', JSON.stringify({
       time: timeLeft,
+      total: totalTime,
       active: isActive,
       lastTimestamp: Date.now(),
       themeIdx: themeIndex
@@ -257,7 +153,7 @@ const Timer: React.FC = () => {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isActive, timeLeft, themeIndex]);
+  }, [isActive, timeLeft, themeIndex, totalTime]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -268,142 +164,95 @@ const Timer: React.FC = () => {
   const toggleTimer = () => setIsActive(!isActive);
   const resetTimer = () => {
     setIsActive(false);
-    setTimeLeft(customMins * 60);
+    setTimeLeft(totalTime);
   };
 
   const handleApplyCustomTime = () => {
-    setTimeLeft(customMins * 60);
+    const seconds = customMins * 60;
+    setTotalTime(seconds);
+    setTimeLeft(seconds);
     setIsCustomizing(false);
     setIsActive(false);
   };
 
+  const progress = totalTime > 0 ? (timeLeft / totalTime) * 100 : 0;
+  const strokeDashoffset = 565 - (565 * progress) / 100;
+
   return (
-    <div className={`relative flex flex-col items-center h-full w-full transition-all duration-1000 bg-gradient-to-b ${currentTheme.bgGradient}`}>
+    <div className={`relative flex flex-col items-center h-full w-full transition-all duration-1000 bg-gradient-to-b ${currentTheme.bgGradient} overflow-hidden`}>
       
       <ThemeBackgroundFX themeId={currentTheme.id} isActive={isActive} />
 
       <header className="w-full flex justify-between items-center pt-14 pb-2 px-8 z-50">
-        <h1 
-          className="text-2xl font-semibold tracking-tight transition-colors duration-1000"
-          style={{ color: currentTheme.color + 'CC' }}
-        >
-          Focus
-        </h1>
+        <div className="flex flex-col">
+          <h1 className="text-2xl font-bold tracking-tight text-white">Focus</h1>
+          <p className="text-[10px] uppercase tracking-widest opacity-40 font-black" style={{ color: currentTheme.color }}>{currentTheme.name}</p>
+        </div>
         <button 
           onClick={() => setIsCustomizing(true)}
-          className="w-9 h-9 rounded-full flex items-center justify-center active:scale-95 transition-all border border-white/5 apple-blur shadow-lg"
+          className="w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/10 apple-blur shadow-xl hover:bg-white/5"
           style={{ color: currentTheme.color }}
         >
-          <Plus size={20} strokeWidth={2.5} />
+          <Plus size={22} strokeWidth={2.5} />
         </button>
       </header>
 
-      <div className="w-full flex-1 flex flex-col items-center justify-center relative -translate-y-4 z-10">
-        <div className={`mb-4 transition-all duration-1000 ${isActive ? 'scale-105 drop-shadow-[0_0_15px_rgba(255,255,255,0.15)]' : 'scale-100'}`}>
-           <ThemeAnimator themeId={currentTheme.id} />
+      <div className="w-full flex-1 flex flex-col items-center justify-center relative -translate-y-6 z-10">
+        <div className="relative flex items-center justify-center mb-6">
+          <svg className="absolute w-[280px] h-[280px] -rotate-90 pointer-events-none overflow-visible">
+            <circle cx="140" cy="140" r="90" fill="transparent" stroke="rgba(255,255,255,0.03)" strokeWidth="4" />
+            <circle cx="140" cy="140" r="90" fill="transparent" stroke={currentTheme.color} strokeWidth="4" strokeDasharray="565" strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-1000 ease-linear" style={{ filter: `drop-shadow(0 0 10px ${currentTheme.color}88)` }} />
+          </svg>
+
+          <div className={`transition-all duration-1000 ${isActive ? 'scale-105' : 'scale-100'}`}>
+            <ThemeAnimator themeId={currentTheme.id} />
+          </div>
         </div>
         
         <div className="text-center w-full px-10">
-          <h2 
-            className="text-[9px] font-black mb-3 uppercase tracking-[0.4em] transition-colors duration-1000 opacity-60"
-            style={{ color: currentTheme.color }}
-          >
-            {currentTheme.name}
-          </h2>
-          <div 
-            className="text-[4.5rem] font-extralight tracking-tight leading-none tabular-nums mb-4 transition-all duration-1000"
-            style={{ 
-              color: '#ffffff',
-              textShadow: isActive ? `0 0 20px ${currentTheme.color}33` : 'none'
-            }}
+          <div className="text-[5.5rem] font-thin tracking-tighter leading-none tabular-nums mb-2 transition-all duration-1000 text-white"
+            style={{ textShadow: isActive ? `0 0 40px ${currentTheme.color}66` : 'none' }}
           >
             {formatTime(timeLeft)}
           </div>
 
-          <div className="h-12 flex items-center justify-center mb-6">
-            <p className={`text-xs font-medium italic opacity-40 max-w-[200px] text-center transition-all duration-500 ${isFetchingMantra ? 'blur-sm' : 'blur-0'}`}>
-              {mantra}
-            </p>
+          <div className="flex items-center justify-center gap-2.5 mb-10 h-8">
+            {FOCUS_THEMES.map((t, idx) => (
+              <button 
+                key={idx} 
+                onClick={() => setThemeIndex(idx)} 
+                className={`transition-all duration-500 rounded-full ${
+                  themeIndex === idx ? 'w-2 h-2 scale-125 opacity-100' : 'w-1.5 h-1.5 opacity-20 hover:opacity-40'
+                }`} 
+                style={{ backgroundColor: themeIndex === idx ? currentTheme.color : '#fff' }} 
+              />
+            ))}
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-3 mb-8">
-          {FOCUS_THEMES.map((t, idx) => (
-            <button
-              key={idx}
-              onClick={() => setThemeIndex(idx)}
-              className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${
-                themeIndex === idx ? 'scale-125' : 'opacity-20 hover:opacity-50'
-              }`}
-              style={{ backgroundColor: themeIndex === idx ? currentTheme.color : '#fff' }}
-            />
-          ))}
-        </div>
-
-        <div className="flex items-center justify-center gap-10 mb-8">
-          <button 
-            onClick={resetTimer}
-            className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 active:scale-90 transition-all hover:text-white/80 shadow-lg"
-          >
-            <RotateCcw size={18} strokeWidth={2} />
+        <div className="flex items-center justify-center gap-10">
+          <button onClick={resetTimer} className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 active:scale-90 transition-all hover:text-white/80 shadow-2xl backdrop-blur-xl">
+            <RotateCcw size={20} />
           </button>
-
-          <button 
-            onClick={toggleTimer}
-            className="w-22 h-22 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-xl relative overflow-hidden group border border-white/10"
-            style={{ backgroundColor: '#ffffff' }}
-          >
-             <div 
-               className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity"
-               style={{ backgroundColor: currentTheme.color }}
-             />
-            {isActive ? <Pause size={34} fill="black" /> : <Play size={34} className="ml-1.5" fill="black" />}
-          </button>
-          
-          <button 
-            onClick={fetchMantra}
-            className={`w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 active:scale-90 transition-all hover:text-white/80 shadow-lg ${isFetchingMantra ? 'animate-spin' : ''}`}
-          >
-            <Sparkles size={18} strokeWidth={2} />
+          <button onClick={toggleTimer} className="w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-[0_10px_30px_rgba(0,0,0,0.3)] relative overflow-hidden group border border-white/20 bg-white">
+            {isActive ? <Pause size={20} fill="black" /> : <Play size={20} className="ml-1" fill="black" />}
           </button>
         </div>
       </div>
 
       {isCustomizing && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setIsCustomizing(false)} />
-          <div 
-            className="relative w-full max-w-xs bg-[#1c1c1e] rounded-[2.5rem] p-10 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-300"
-          >
-            <h3 className="text-xl font-semibold mb-8 text-center text-white/90">Session Duration</h3>
-            <div className="space-y-8">
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setIsCustomizing(false)} />
+          <div className="relative w-full max-w-xs bg-[#1c1c1e] rounded-[3rem] p-10 border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-300">
+            <h3 className="text-xl font-bold mb-10 text-center text-white/90 tracking-tight">Set Focus Session</h3>
+            <div className="space-y-10">
               <div className="flex flex-col items-center">
-                <input 
-                  type="number"
-                  value={customMins}
-                  onChange={(e) => setCustomMins(parseInt(e.target.value) || 1)}
-                  className="bg-transparent text-7xl font-thin w-full text-center focus:outline-none text-white tabular-nums"
-                  autoFocus
-                  min="1"
-                  max="999"
-                />
-                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mt-4">Minutes</span>
+                <input type="number" value={customMins} onChange={(e) => setCustomMins(Math.min(999, Math.max(1, parseInt(e.target.value) || 1)))} className="bg-transparent text-8xl font-thin w-full text-center focus:outline-none text-white tabular-nums selection:bg-white/10" autoFocus min="1" max="999" />
+                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-6">Minutes</span>
               </div>
-              
               <div className="flex gap-4">
-                <button 
-                  onClick={() => setIsCustomizing(false)}
-                  className="flex-1 py-5 rounded-[1.5rem] bg-white/5 text-sm font-bold text-white/40 active:scale-95 transition-all"
-                >
-                  CANCEL
-                </button>
-                <button 
-                  onClick={handleApplyCustomTime}
-                  className="flex-1 py-5 rounded-[1.5rem] text-black text-sm font-bold active:scale-95 transition-all"
-                  style={{ backgroundColor: currentTheme.color }}
-                >
-                  START
-                </button>
+                <button onClick={() => setIsCustomizing(false)} className="flex-1 py-5 rounded-[1.8rem] bg-white/5 text-xs font-bold text-white/40 active:scale-95 transition-all uppercase tracking-widest border border-white/5">Cancel</button>
+                <button onClick={handleApplyCustomTime} className="flex-1 py-5 rounded-[1.8rem] text-black text-xs font-bold active:scale-95 transition-all uppercase tracking-widest shadow-lg shadow-white/5" style={{ backgroundColor: currentTheme.color }}>Apply</button>
               </div>
             </div>
           </div>
