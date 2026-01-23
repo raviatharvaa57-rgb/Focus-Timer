@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, RotateCcw, Plus } from 'lucide-react';
 import { FOCUS_THEMES, PRESETS } from '../constants';
 import ThemeAnimator from './ThemeAnimator';
@@ -110,6 +110,10 @@ const Timer: React.FC = () => {
   const [themeIndex, setThemeIndex] = useState(0);
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [customMins, setCustomMins] = useState(25);
+  
+  const touchStart = useRef<number | null>(null);
+  const touchEnd = useRef<number | null>(null);
+  const minSwipeDistance = 50;
 
   const currentTheme = FOCUS_THEMES[themeIndex];
 
@@ -129,7 +133,7 @@ const Timer: React.FC = () => {
           setTimeLeft(time);
         }
       } catch (e) {
-        console.error("Failed to restore timer state", e);
+        console.error(e);
       }
     }
   }, []);
@@ -149,7 +153,7 @@ const Timer: React.FC = () => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             setIsActive(false);
-            if (window.navigator.vibrate) window.navigator.vibrate([400, 100, 400]);
+            if (window.navigator.vibrate) window.navigator.vibrate([500, 100, 500]);
             return 0;
           }
           return prev - 1;
@@ -159,16 +163,49 @@ const Timer: React.FC = () => {
     return () => clearInterval(interval);
   }, [isActive, timeLeft, themeIndex, totalTime]);
 
+  const nextTheme = useCallback(() => {
+    setThemeIndex((prev) => (prev + 1) % FOCUS_THEMES.length);
+    if (window.navigator.vibrate) window.navigator.vibrate(5);
+  }, []);
+
+  const prevTheme = useCallback(() => {
+    setThemeIndex((prev) => (prev - 1 + FOCUS_THEMES.length) % FOCUS_THEMES.length);
+    if (window.navigator.vibrate) window.navigator.vibrate(5);
+  }, []);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEnd.current = null;
+    touchStart.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEnd.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart.current || !touchEnd.current) return;
+    const distance = touchStart.current - touchEnd.current;
+    if (Math.abs(distance) > minSwipeDistance) {
+      if (distance > 0) nextTheme();
+      else prevTheme();
+    }
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const toggleTimer = () => setIsActive(!isActive);
+  const toggleTimer = () => {
+    setIsActive(!isActive);
+    if (window.navigator.vibrate) window.navigator.vibrate(10);
+  };
+
   const resetTimer = () => {
     setIsActive(false);
     setTimeLeft(totalTime);
+    if (window.navigator.vibrate) window.navigator.vibrate(5);
   };
 
   const handleApplyCustomTime = (mins: number) => {
@@ -183,52 +220,54 @@ const Timer: React.FC = () => {
   const strokeDashoffset = 565 - (565 * progress) / 100;
 
   return (
-    <div className={`relative flex flex-col items-center h-full w-full transition-all duration-1000 bg-gradient-to-b ${currentTheme.bgGradient} overflow-hidden`}>
-      
+    <div 
+      className={`relative flex flex-col items-center h-full w-full transition-all duration-1000 bg-gradient-to-b ${currentTheme.bgGradient} overflow-hidden`}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       <ThemeBackgroundFX themeId={currentTheme.id} isActive={isActive} />
 
-      <header className="w-full flex justify-between items-center pt-14 pb-2 px-8 z-50">
+      <header className="w-full flex justify-between items-center pt-16 pb-2 px-8 z-50">
         <div className="flex flex-col">
           <h1 className="text-2xl font-bold tracking-tight text-white">Focus</h1>
-          <p className="text-[10px] uppercase tracking-widest opacity-40 font-black" style={{ color: currentTheme.color }}>{currentTheme.name}</p>
+          <p className="text-[9px] uppercase tracking-[0.3em] opacity-40 font-black" style={{ color: currentTheme.color }}>{currentTheme.name}</p>
         </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={() => setIsCustomizing(true)}
-            className="w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/10 apple-blur shadow-xl hover:bg-white/5"
-            style={{ color: currentTheme.color }}
-          >
-            <Plus size={22} strokeWidth={2.5} />
-          </button>
-        </div>
+        <button 
+          onClick={() => setIsCustomizing(true)}
+          className="w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/10 apple-blur shadow-2xl"
+          style={{ color: currentTheme.color }}
+        >
+          <Plus size={22} strokeWidth={2.5} />
+        </button>
       </header>
 
-      <div className="w-full flex-1 flex flex-col items-center justify-center relative -translate-y-6 z-10">
-        <div className="relative flex items-center justify-center mb-4">
-          <svg className="absolute w-[280px] h-[280px] -rotate-90 pointer-events-none overflow-visible">
-            <circle cx="140" cy="140" r="90" fill="transparent" stroke="rgba(255,255,255,0.03)" strokeWidth="4" />
-            <circle cx="140" cy="140" r="90" fill="transparent" stroke={currentTheme.color} strokeWidth="4" strokeDasharray="565" strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-1000 ease-linear" style={{ filter: `drop-shadow(0 0 10px ${currentTheme.color}88)` }} />
+      <div className="w-full flex-1 flex flex-col items-center justify-center relative -translate-y-8 z-10 px-6">
+        <div className="relative flex items-center justify-center mb-6 group cursor-pointer" onClick={nextTheme}>
+          <svg className="absolute w-[300px] h-[300px] -rotate-90 pointer-events-none overflow-visible">
+            <circle cx="150" cy="150" r="90" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
+            <circle cx="150" cy="150" r="90" fill="transparent" stroke={currentTheme.color} strokeWidth="4" strokeDasharray="565" strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-1000 ease-linear" style={{ filter: `drop-shadow(0 0 12px ${currentTheme.color}AA)` }} />
           </svg>
 
-          <div className={`transition-all duration-1000 ${isActive ? 'scale-105' : 'scale-100'}`}>
+          <div className={`transition-all duration-1000 ${isActive ? 'scale-110' : 'scale-100'} active:scale-95`}>
             <ThemeAnimator themeId={currentTheme.id} />
           </div>
         </div>
         
-        <div className="text-center w-full px-10">
-          <div className="text-[5.5rem] font-thin tracking-tighter leading-none tabular-nums mb-10 transition-all duration-1000 text-white"
+        <div className="text-center w-full">
+          <div className="text-[6.5rem] font-extralight tracking-tighter leading-none tabular-nums mb-12 transition-all duration-1000 text-white"
             style={{ textShadow: isActive ? `0 0 40px ${currentTheme.color}66` : 'none' }}
           >
             {formatTime(timeLeft)}
           </div>
 
-          <div className="flex items-center justify-center gap-2.5 mb-10 h-8">
+          <div className="flex items-center justify-center gap-3 mb-10">
             {FOCUS_THEMES.map((t, idx) => (
               <button 
                 key={idx} 
-                onClick={() => { setThemeIndex(idx); }} 
+                onClick={(e) => { e.stopPropagation(); setThemeIndex(idx); }} 
                 className={`transition-all duration-500 rounded-full ${
-                  themeIndex === idx ? 'w-2 h-2 scale-125 opacity-100 ring-4 ring-white/10' : 'w-1.5 h-1.5 opacity-20 hover:opacity-40'
+                  themeIndex === idx ? 'w-2 h-2 scale-125 opacity-100 ring-4 ring-white/10' : 'w-1.5 h-1.5 opacity-20'
                 }`} 
                 style={{ backgroundColor: themeIndex === idx ? currentTheme.color : '#fff' }} 
               />
@@ -236,51 +275,46 @@ const Timer: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-10">
-          <button onClick={resetTimer} className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 active:scale-90 transition-all hover:text-white/80 shadow-2xl backdrop-blur-xl">
-            <RotateCcw size={20} />
+        <div className="flex items-center justify-center gap-12">
+          <button onClick={resetTimer} className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/30 active:scale-90 transition-all shadow-2xl backdrop-blur-3xl">
+            <RotateCcw size={22} />
           </button>
-          <button onClick={toggleTimer} className="w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-[0_10px_30px_rgba(0,0,0,0.3)] relative overflow-hidden group border border-white/20 bg-white">
-            {isActive ? <Pause size={22} fill="black" /> : <Play size={22} className="ml-1" fill="black" />}
+          <button onClick={toggleTimer} className="w-16 h-16 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-[0_15px_40px_rgba(0,0,0,0.5)] border border-white/20 bg-white">
+            {isActive ? <Pause size={24} fill="black" /> : <Play size={24} className="ml-1" fill="black" />}
           </button>
         </div>
       </div>
 
       {isCustomizing && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setIsCustomizing(false)} />
-          <div className="relative w-full max-w-sm bg-[#1c1c1e] rounded-[3.5rem] p-8 border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-300">
-            <h3 className="text-xl font-bold mb-8 text-center text-white/90 tracking-tight">Focus Duration</h3>
-            
-            <div className="space-y-8">
-              <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-8 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" onClick={() => setIsCustomizing(false)} />
+          <div className="relative w-full max-w-sm apple-blur rounded-[3.5rem] p-10 border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-300">
+            <h3 className="text-lg font-bold mb-10 text-center opacity-40 uppercase tracking-[0.3em]">Duration</h3>
+            <div className="space-y-10">
+              <div className="grid grid-cols-2 gap-3">
                 {PRESETS.map((preset) => (
                   <button
                     key={preset.label}
                     onClick={() => { setCustomMins(preset.minutes); handleApplyCustomTime(preset.minutes); }}
-                    className="py-4 px-2 rounded-2xl bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white/80 active:scale-95 transition-all"
+                    className="py-5 px-2 rounded-2xl bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/30 active:scale-95 transition-all"
                   >
-                    {preset.label} <span className="block text-[8px] opacity-40 mt-1">{preset.minutes}m</span>
+                    {preset.label}
                   </button>
                 ))}
               </div>
-
               <div className="flex flex-col items-center">
                 <input 
                   type="number" 
                   value={customMins} 
                   onChange={(e) => setCustomMins(Math.min(999, Math.max(1, parseInt(e.target.value) || 1)))} 
-                  className="bg-transparent text-8xl font-thin w-full text-center focus:outline-none text-white tabular-nums selection:bg-white/10" 
+                  className="bg-transparent text-8xl font-extralight w-full text-center focus:outline-none text-white tabular-nums" 
                   autoFocus 
-                  min="1" 
-                  max="999" 
                 />
-                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-4">Minutes</span>
+                <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.5em] mt-4">Minutes</span>
               </div>
-
               <div className="flex gap-4">
-                <button onClick={() => setIsCustomizing(false)} className="flex-1 py-5 rounded-[2rem] bg-white/5 text-[10px] font-bold text-white/40 active:scale-95 transition-all uppercase tracking-widest border border-white/5">Cancel</button>
-                <button onClick={() => handleApplyCustomTime(customMins)} className="flex-1 py-5 rounded-[2rem] text-black text-[10px] font-bold active:scale-95 transition-all uppercase tracking-widest shadow-lg shadow-white/5" style={{ backgroundColor: currentTheme.color }}>Apply</button>
+                <button onClick={() => setIsCustomizing(false)} className="flex-1 py-5 rounded-[1.8rem] bg-white/5 text-[10px] font-black uppercase tracking-widest text-white/30 active:scale-95 transition-all">Cancel</button>
+                <button onClick={() => handleApplyCustomTime(customMins)} className="flex-1 py-5 rounded-[1.8rem] text-black text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all" style={{ backgroundColor: currentTheme.color }}>Apply</button>
               </div>
             </div>
           </div>

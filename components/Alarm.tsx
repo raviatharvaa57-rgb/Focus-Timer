@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, X, Bell, BellRing, Trash2, Check, Volume2, Play } from 'lucide-react';
+import { Plus, Trash2, Volume2 } from 'lucide-react';
 import { AlarmItem } from '../types';
 
 const ALARM_SOUNDS = [
@@ -10,7 +10,8 @@ const ALARM_SOUNDS = [
   { id: 'digital', name: 'Digital Wake', url: 'https://cdn.freesound.org/previews/219/219244_4082831-lq.mp3' },
 ];
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const FULL_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const Alarm: React.FC = () => {
   const [alarms, setAlarms] = useState<AlarmItem[]>(() => {
@@ -33,6 +34,7 @@ const Alarm: React.FC = () => {
 
   const toggleAlarm = (id: string) => {
     setAlarms(alarms.map(a => a.id === id ? { ...a, active: !a.active } : a));
+    if (window.navigator.vibrate) window.navigator.vibrate(10);
   };
 
   const removeAlarm = (id: string) => {
@@ -61,12 +63,10 @@ const Alarm: React.FC = () => {
   };
 
   const playPreview = (url: string, id: string) => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
+    if (audioRef.current) audioRef.current.pause();
     audioRef.current = new Audio(url);
     audioRef.current.volume = 0.5;
-    audioRef.current.play().catch(e => console.error("Audio playback failed", e));
+    audioRef.current.play().catch(e => console.error(e));
     setSelectedSoundId(id);
   };
 
@@ -78,116 +78,85 @@ const Alarm: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-black safe-top px-6">
-      <header className="flex justify-between items-center pt-12 pb-6">
-        <h1 className="text-4xl font-bold tracking-tight">Alarm</h1>
+    <div className="h-full flex flex-col bg-black px-6">
+      <header className="flex justify-between items-center pt-16 pb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Alarm</h1>
         <button 
-          onClick={() => { setIsAdding(true); setSelectedSoundId('minimal'); setSelectedDays(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']); }}
-          className="w-10 h-10 rounded-full bg-zinc-800/50 flex items-center justify-center text-orange-500 active:scale-95 transition-all shadow-lg"
+          onClick={() => { setIsAdding(true); setSelectedSoundId('minimal'); }}
+          className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-orange-500 active:scale-90 transition-all border border-white/5"
         >
           <Plus size={24} />
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto hide-scrollbar space-y-4 pb-40">
-        {alarms.map((alarm) => {
-          const soundName = ALARM_SOUNDS.find(s => s.id === alarm.sound)?.name || 'Default';
-          return (
-            <div 
-              key={alarm.id} 
-              className={`apple-blur p-6 rounded-[2.5rem] border border-white/5 flex items-center justify-between transition-all duration-300 ${alarm.active ? 'opacity-100' : 'opacity-40'}`}
-            >
-              <div className="flex flex-col">
-                <span className="text-5xl font-light tracking-tight tabular-nums mb-1">{alarm.time}</span>
-                <div className="flex items-center space-x-2">
-                   <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{alarm.label}</span>
-                   <span className="w-1 h-1 bg-zinc-600 rounded-full"></span>
-                   <span className="text-[10px] text-orange-500/70 font-bold uppercase tracking-widest">
-                     {alarm.days.join(', ')}
-                   </span>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <button 
-                  onClick={() => toggleAlarm(alarm.id)}
-                  className={`w-14 h-8 rounded-full relative transition-colors duration-300 flex items-center px-1 ${alarm.active ? 'bg-green-500' : 'bg-zinc-700'}`}
-                >
-                  <div className={`w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${alarm.active ? 'translate-x-6' : 'translate-x-0'}`} />
-                </button>
-                <button onClick={() => removeAlarm(alarm.id)} className="text-red-500/40 hover:text-red-500 transition-colors p-2 active:scale-90">
-                  <Trash2 size={18} />
-                </button>
+      <div className="flex-1 overflow-y-auto hide-scrollbar space-y-4 pb-48">
+        {alarms.map((alarm) => (
+          <div 
+            key={alarm.id} 
+            className={`apple-blur p-6 rounded-[2rem] border border-white/5 flex items-center justify-between transition-all duration-300 ${alarm.active ? 'opacity-100' : 'opacity-40 scale-[0.98]'}`}
+          >
+            <div className="flex flex-col">
+              <span className="text-5xl font-extralight tracking-tighter tabular-nums mb-2">{alarm.time}</span>
+              <div className="flex flex-col space-y-0.5">
+                 <span className="text-[10px] text-white/60 font-black uppercase tracking-widest">{alarm.label}</span>
+                 <span className="text-[9px] text-orange-500/80 font-bold uppercase tracking-widest truncate max-w-[150px]">
+                   {alarm.days.join(', ')}
+                 </span>
               </div>
             </div>
-          );
-        })}
+            <div className="flex items-center space-x-5">
+              <button 
+                onClick={() => toggleAlarm(alarm.id)}
+                className={`w-14 h-8 rounded-full relative transition-all duration-500 flex items-center px-1 shadow-inner ${alarm.active ? 'bg-orange-500' : 'bg-zinc-800'}`}
+              >
+                <div className={`w-6 h-6 bg-white rounded-full shadow-lg transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${alarm.active ? 'translate-x-6' : 'translate-x-0'}`} />
+              </button>
+              <button onClick={() => removeAlarm(alarm.id)} className="text-white/10 hover:text-red-500 transition-colors p-2 active:scale-90">
+                <Trash2 size={18} />
+              </button>
+            </div>
+          </div>
+        ))}
         {alarms.length === 0 && (
-          <div className="py-20 text-center opacity-20 uppercase tracking-widest text-[10px] font-bold">No Alarms</div>
+          <div className="py-20 text-center opacity-10 uppercase tracking-[0.4em] text-[10px] font-black">No Alarms</div>
         )}
       </div>
 
       {isAdding && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-200">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => { setIsAdding(false); stopPreview(); }} />
-          <div className="relative w-full max-w-sm apple-blur rounded-[3rem] p-8 border border-white/10 shadow-2xl animate-in zoom-in-95 overflow-y-auto max-h-[90vh] hide-scrollbar">
-            <h3 className="text-xl font-bold mb-6 text-center">New Alarm</h3>
-            <div className="space-y-6">
+        <div className="fixed inset-0 z-[2000] flex items-end justify-center animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => { setIsAdding(false); stopPreview(); }} />
+          <div className="relative w-full max-w-lg apple-blur rounded-t-[3rem] p-8 border-t border-white/10 shadow-2xl animate-in slide-in-from-bottom-full duration-500 ease-out pb-20">
+            <h3 className="text-lg font-bold mb-8 text-center opacity-40 uppercase tracking-widest">New Alarm</h3>
+            <div className="space-y-8">
               <input 
                 type="time" 
                 value={newTime} 
                 onChange={e => setNewTime(e.target.value)}
-                className="w-full bg-white/5 rounded-2xl py-6 px-4 text-4xl text-center focus:outline-none border border-white/10 text-white"
-              />
-              <input 
-                type="text" 
-                placeholder="Label (e.g. Gym)" 
-                value={newLabel}
-                onChange={e => setNewLabel(e.target.value)}
-                className="w-full bg-white/5 rounded-2xl py-4 px-4 focus:outline-none border border-white/10 text-white placeholder:text-white/20"
+                className="w-full bg-white/5 rounded-3xl py-8 px-4 text-6xl font-extralight text-center focus:outline-none border border-white/5 text-white tabular-nums"
               />
               
-              <div className="space-y-3">
-                <p className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-black ml-1">Repeat</p>
-                <div className="flex justify-between">
-                  {DAYS.map(day => (
+              <div className="space-y-4">
+                <p className="text-[9px] uppercase tracking-[0.3em] opacity-20 font-black ml-1">Days</p>
+                <div className="flex justify-between gap-1">
+                  {DAYS.map((day, idx) => (
                     <button
-                      key={day}
-                      onClick={() => toggleDay(day)}
-                      className={`w-9 h-9 rounded-full text-[10px] font-bold transition-all ${
-                        selectedDays.includes(day) 
+                      key={idx}
+                      onClick={() => toggleDay(FULL_DAYS[idx])}
+                      className={`flex-1 aspect-square rounded-2xl text-[11px] font-bold transition-all active:scale-90 ${
+                        selectedDays.includes(FULL_DAYS[idx]) 
                           ? 'bg-orange-500 text-black' 
-                          : 'bg-white/5 text-white/40'
+                          : 'bg-white/5 text-white/20'
                       }`}
                     >
-                      {day[0]}
+                      {day}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <p className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-black ml-1">Sound Selection</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {ALARM_SOUNDS.map((sound) => (
-                    <button
-                      key={sound.id}
-                      onClick={() => playPreview(sound.url, sound.id)}
-                      className={`flex items-center space-x-2 p-3 rounded-xl border transition-all active:scale-95 ${
-                        selectedSoundId === sound.id 
-                          ? 'bg-orange-500/20 border-orange-500/50 text-orange-400' 
-                          : 'bg-white/5 border-transparent text-white/40'
-                      }`}
-                    >
-                      <Volume2 size={14} className={selectedSoundId === sound.id ? 'animate-pulse' : ''} />
-                      <span className="text-[10px] font-bold truncate">{sound.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex space-x-3 pt-2">
-                <button onClick={() => { setIsAdding(false); stopPreview(); }} className="flex-1 py-4 rounded-2xl bg-zinc-800 font-bold uppercase tracking-widest text-[10px] opacity-60 active:scale-95 transition-all">Cancel</button>
-                <button onClick={addAlarm} className="flex-1 py-4 rounded-2xl bg-white text-black font-bold uppercase tracking-widest text-[10px] active:scale-95 transition-all">Save</button>
+              <div className="flex space-x-3 pt-6">
+                <button onClick={() => { setIsAdding(false); stopPreview(); }} className="flex-1 py-5 rounded-[1.8rem] bg-white/5 font-black uppercase tracking-widest text-[10px] text-white/30 active:scale-95 transition-all">Cancel</button>
+                <button onClick={addAlarm} className="flex-1 py-5 rounded-[1.8rem] bg-white text-black font-black uppercase tracking-widest text-[10px] active:scale-95 transition-all shadow-xl">Save</button>
               </div>
             </div>
           </div>
