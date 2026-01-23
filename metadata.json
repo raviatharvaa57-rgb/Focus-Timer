@@ -1,5 +1,5 @@
 {
-  "name": "Focus - Zen Productivity Timer",
+  "name": "Focus - A simple timer to focus, manage time, and relax.",
   "description": "An elegant, Apple-inspired focus app featuring animated themes, countdown timers, alarms, and world clocks powered by Gemini.",
   "requestFramePermissions": [
     "geolocation"

@@ -216,13 +216,14 @@ const Timer: React.FC = () => {
             {formatTime(timeLeft)}
           </div>
 
+          {/* Animation Switcher Dots */}
           <div className="flex items-center justify-center gap-2.5 mb-10 h-8">
             {FOCUS_THEMES.map((t, idx) => (
               <button 
                 key={idx} 
                 onClick={() => setThemeIndex(idx)} 
                 className={`transition-all duration-500 rounded-full ${
-                  themeIndex === idx ? 'w-2 h-2 scale-125 opacity-100' : 'w-1.5 h-1.5 opacity-20 hover:opacity-40'
+                  themeIndex === idx ? 'w-2 h-2 scale-125 opacity-100 ring-4 ring-white/10' : 'w-1.5 h-1.5 opacity-20 hover:opacity-40'
                 }`} 
                 style={{ backgroundColor: themeIndex === idx ? currentTheme.color : '#fff' }} 
               />
@@ -235,7 +236,7 @@ const Timer: React.FC = () => {
             <RotateCcw size={20} />
           </button>
           <button onClick={toggleTimer} className="w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-[0_10px_30px_rgba(0,0,0,0.3)] relative overflow-hidden group border border-white/20 bg-white">
-            {isActive ? <Pause size={20} fill="black" /> : <Play size={20} className="ml-1" fill="black" />}
+            {isActive ? <Pause size={22} fill="black" /> : <Play size={22} className="ml-1" fill="black" />}
           </button>
         </div>
       </div>

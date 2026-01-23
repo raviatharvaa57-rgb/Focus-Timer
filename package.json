@@ -1,5 +1,5 @@
 {
-  "name": "focus---zen-productivity-timer",
+  "name": "focus---a-simple-timer-to-focus,-manage-time,-and-relax.",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,8 +11,7 @@
   "dependencies": {
     "react-dom": "^19.2.3",
     "react": "^19.2.3",
-    "lucide-react": "^0.562.0",
-    "@google/genai": "^1.38.0"
+    "lucide-react": "^0.562.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
