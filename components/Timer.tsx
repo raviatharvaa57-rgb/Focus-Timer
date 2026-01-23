@@ -230,44 +230,46 @@ const Timer: React.FC = () => {
 
       <header className="w-full flex justify-between items-center pt-16 pb-2 px-8 z-50">
         <div className="flex flex-col">
-          <h1 className="text-2xl font-bold tracking-tight text-white">Focus</h1>
-          <p className="text-[9px] uppercase tracking-[0.3em] opacity-40 font-black" style={{ color: currentTheme.color }}>{currentTheme.name}</p>
+          <h1 className="text-xl font-bold tracking-tight text-white opacity-90">Focus</h1>
+          <p className="text-[8px] uppercase tracking-[0.4em] opacity-40 font-black mt-0.5" style={{ color: currentTheme.color }}>{currentTheme.name}</p>
         </div>
         <button 
           onClick={() => setIsCustomizing(true)}
-          className="w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/10 apple-blur shadow-2xl"
+          className="w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/10 apple-blur shadow-2xl"
           style={{ color: currentTheme.color }}
         >
-          <Plus size={22} strokeWidth={2.5} />
+          <Plus size={20} strokeWidth={2.5} />
         </button>
       </header>
 
-      <div className="w-full flex-1 flex flex-col items-center justify-center relative -translate-y-8 z-10 px-6">
-        <div className="relative flex items-center justify-center mb-6 group cursor-pointer" onClick={nextTheme}>
-          <svg className="absolute w-[300px] h-[300px] -rotate-90 pointer-events-none overflow-visible">
-            <circle cx="150" cy="150" r="90" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
-            <circle cx="150" cy="150" r="90" fill="transparent" stroke={currentTheme.color} strokeWidth="4" strokeDasharray="565" strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-1000 ease-linear" style={{ filter: `drop-shadow(0 0 12px ${currentTheme.color}AA)` }} />
+      <div className="w-full flex-1 flex flex-col items-center justify-center relative -translate-y-12 z-10 px-6">
+        <div className="relative flex items-center justify-center mb-10 group cursor-pointer" onClick={nextTheme}>
+          <svg className="absolute w-[240px] h-[240px] -rotate-90 pointer-events-none overflow-visible">
+            <circle cx="120" cy="120" r="90" fill="transparent" stroke="rgba(255,255,255,0.03)" strokeWidth="3" />
+            <circle cx="120" cy="120" r="90" fill="transparent" stroke={currentTheme.color} strokeWidth="3" strokeDasharray="565" strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-1000 ease-linear" style={{ filter: `drop-shadow(0 0 10px ${currentTheme.color}88)` }} />
           </svg>
 
           <div className={`transition-all duration-1000 ${isActive ? 'scale-110' : 'scale-100'} active:scale-95`}>
-            <ThemeAnimator themeId={currentTheme.id} />
+            <div className="scale-[0.85]">
+              <ThemeAnimator themeId={currentTheme.id} />
+            </div>
           </div>
         </div>
         
         <div className="text-center w-full">
-          <div className="text-[6.5rem] font-extralight tracking-tighter leading-none tabular-nums mb-12 transition-all duration-1000 text-white"
-            style={{ textShadow: isActive ? `0 0 40px ${currentTheme.color}66` : 'none' }}
+          <div className="text-5xl font-light tracking-tight leading-none tabular-nums mb-8 transition-all duration-1000 text-white"
+            style={{ textShadow: isActive ? `0 0 30px ${currentTheme.color}44` : 'none' }}
           >
             {formatTime(timeLeft)}
           </div>
 
-          <div className="flex items-center justify-center gap-3 mb-10">
+          <div className="flex items-center justify-center gap-2 mb-8">
             {FOCUS_THEMES.map((t, idx) => (
               <button 
                 key={idx} 
                 onClick={(e) => { e.stopPropagation(); setThemeIndex(idx); }} 
                 className={`transition-all duration-500 rounded-full ${
-                  themeIndex === idx ? 'w-2 h-2 scale-125 opacity-100 ring-4 ring-white/10' : 'w-1.5 h-1.5 opacity-20'
+                  themeIndex === idx ? 'w-1.5 h-1.5 scale-110 opacity-100 ring-2 ring-white/10' : 'w-1 h-1 opacity-10'
                 }`} 
                 style={{ backgroundColor: themeIndex === idx ? currentTheme.color : '#fff' }} 
               />
@@ -275,12 +277,12 @@ const Timer: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-12">
-          <button onClick={resetTimer} className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/30 active:scale-90 transition-all shadow-2xl backdrop-blur-3xl">
-            <RotateCcw size={22} />
+        <div className="flex items-center justify-center gap-10">
+          <button onClick={resetTimer} className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/20 active:scale-90 transition-all shadow-xl backdrop-blur-3xl">
+            <RotateCcw size={20} />
           </button>
-          <button onClick={toggleTimer} className="w-16 h-16 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-[0_15px_40px_rgba(0,0,0,0.5)] border border-white/20 bg-white">
-            {isActive ? <Pause size={24} fill="black" /> : <Play size={24} className="ml-1" fill="black" />}
+          <button onClick={toggleTimer} className="w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-2xl border border-white/20 bg-white">
+            {isActive ? <Pause size={22} fill="black" /> : <Play size={22} className="ml-1" fill="black" />}
           </button>
         </div>
       </div>
@@ -288,15 +290,15 @@ const Timer: React.FC = () => {
       {isCustomizing && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-8 animate-in fade-in duration-300">
           <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" onClick={() => setIsCustomizing(false)} />
-          <div className="relative w-full max-w-sm apple-blur rounded-[3.5rem] p-10 border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-300">
-            <h3 className="text-lg font-bold mb-10 text-center opacity-40 uppercase tracking-[0.3em]">Duration</h3>
-            <div className="space-y-10">
-              <div className="grid grid-cols-2 gap-3">
+          <div className="relative w-full max-w-sm apple-blur rounded-[3rem] p-8 border border-white/10 shadow-2xl animate-in zoom-in-95 duration-300">
+            <h3 className="text-base font-bold mb-8 text-center opacity-40 uppercase tracking-[0.3em]">Session</h3>
+            <div className="space-y-8">
+              <div className="grid grid-cols-2 gap-2">
                 {PRESETS.map((preset) => (
                   <button
                     key={preset.label}
                     onClick={() => { setCustomMins(preset.minutes); handleApplyCustomTime(preset.minutes); }}
-                    className="py-5 px-2 rounded-2xl bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/30 active:scale-95 transition-all"
+                    className="py-4 px-2 rounded-xl bg-white/5 border border-white/5 text-[9px] font-black uppercase tracking-widest text-white/30 active:scale-95 transition-all"
                   >
                     {preset.label}
                   </button>
@@ -307,14 +309,14 @@ const Timer: React.FC = () => {
                   type="number" 
                   value={customMins} 
                   onChange={(e) => setCustomMins(Math.min(999, Math.max(1, parseInt(e.target.value) || 1)))} 
-                  className="bg-transparent text-8xl font-extralight w-full text-center focus:outline-none text-white tabular-nums" 
+                  className="bg-transparent text-7xl font-extralight w-full text-center focus:outline-none text-white tabular-nums" 
                   autoFocus 
                 />
-                <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.5em] mt-4">Minutes</span>
+                <span className="text-[9px] font-black text-white/10 uppercase tracking-[0.5em] mt-3">Minutes</span>
               </div>
-              <div className="flex gap-4">
-                <button onClick={() => setIsCustomizing(false)} className="flex-1 py-5 rounded-[1.8rem] bg-white/5 text-[10px] font-black uppercase tracking-widest text-white/30 active:scale-95 transition-all">Cancel</button>
-                <button onClick={() => handleApplyCustomTime(customMins)} className="flex-1 py-5 rounded-[1.8rem] text-black text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all" style={{ backgroundColor: currentTheme.color }}>Apply</button>
+              <div className="flex gap-3">
+                <button onClick={() => setIsCustomizing(false)} className="flex-1 py-4 rounded-2xl bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/30 active:scale-95 transition-all">Cancel</button>
+                <button onClick={() => handleApplyCustomTime(customMins)} className="flex-1 py-4 rounded-2xl text-black text-[9px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all" style={{ backgroundColor: currentTheme.color }}>Apply</button>
               </div>
             </div>
           </div>
