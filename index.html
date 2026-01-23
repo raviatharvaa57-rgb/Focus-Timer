@@ -32,6 +32,28 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+        /* Loading Splash Styles */
+        #splash {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+        .loader-ring {
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
         @keyframes float {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
@@ -50,15 +72,34 @@
 <script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+    "react": "https://esm.sh/react@19.0.0",
+    "react/": "https://esm.sh/react@19.0.0/",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/": "https://esm.sh/react-dom@19.0.0/",
+    "lucide-react": "https://esm.sh/lucide-react@0.474.0",
+    "@google/genai": "https://esm.sh/@google/genai@1.38.0"
   }
 }
 </script>
 </head>
 <body>
+    <div id="splash">
+        <div class="loader-ring"></div>
+        <div class="mt-4 text-[10px] font-bold tracking-[0.4em] uppercase opacity-40">Focus</div>
+    </div>
     <div id="root"></div>
+    <script type="module" src="index.tsx"></script>
+    <script>
+        // Remove splash once React is ready
+        window.addEventListener('load', () => {
+            const splash = document.getElementById('splash');
+            if (splash) {
+                setTimeout(() => {
+                    splash.style.opacity = '0';
+                    setTimeout(() => splash.remove(), 500);
+                }, 300);
+            }
+        });
+    </script>
 </body>
 </html>

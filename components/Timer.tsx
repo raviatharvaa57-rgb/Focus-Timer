@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Plus } from 'lucide-react';
-import { FOCUS_THEMES } from '../constants';
+import { FOCUS_THEMES, PRESETS } from '../constants';
 import ThemeAnimator from './ThemeAnimator';
 
 const ThemeBackgroundFX: React.FC<{ themeId: string; isActive: boolean }> = ({ themeId, isActive }) => {
@@ -116,16 +116,20 @@ const Timer: React.FC = () => {
   useEffect(() => {
     const savedState = localStorage.getItem('focus_timer_state');
     if (savedState) {
-      const { time, total, active, lastTimestamp, themeIdx } = JSON.parse(savedState);
-      setThemeIndex(themeIdx || 0);
-      setTotalTime(total || time || 25 * 60);
-      if (active) {
-        const elapsed = Math.floor((Date.now() - lastTimestamp) / 1000);
-        const remaining = Math.max(0, time - elapsed);
-        setTimeLeft(remaining);
-        setIsActive(remaining > 0);
-      } else {
-        setTimeLeft(time);
+      try {
+        const { time, total, active, lastTimestamp, themeIdx } = JSON.parse(savedState);
+        setThemeIndex(themeIdx || 0);
+        setTotalTime(total || time || 25 * 60);
+        if (active) {
+          const elapsed = Math.floor((Date.now() - lastTimestamp) / 1000);
+          const remaining = Math.max(0, time - elapsed);
+          setTimeLeft(remaining);
+          setIsActive(remaining > 0);
+        } else {
+          setTimeLeft(time);
+        }
+      } catch (e) {
+        console.error("Failed to restore timer state", e);
       }
     }
   }, []);
@@ -167,8 +171,8 @@ const Timer: React.FC = () => {
     setTimeLeft(totalTime);
   };
 
-  const handleApplyCustomTime = () => {
-    const seconds = customMins * 60;
+  const handleApplyCustomTime = (mins: number) => {
+    const seconds = mins * 60;
     setTotalTime(seconds);
     setTimeLeft(seconds);
     setIsCustomizing(false);
@@ -188,17 +192,19 @@ const Timer: React.FC = () => {
           <h1 className="text-2xl font-bold tracking-tight text-white">Focus</h1>
           <p className="text-[10px] uppercase tracking-widest opacity-40 font-black" style={{ color: currentTheme.color }}>{currentTheme.name}</p>
         </div>
-        <button 
-          onClick={() => setIsCustomizing(true)}
-          className="w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/10 apple-blur shadow-xl hover:bg-white/5"
-          style={{ color: currentTheme.color }}
-        >
-          <Plus size={22} strokeWidth={2.5} />
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setIsCustomizing(true)}
+            className="w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/10 apple-blur shadow-xl hover:bg-white/5"
+            style={{ color: currentTheme.color }}
+          >
+            <Plus size={22} strokeWidth={2.5} />
+          </button>
+        </div>
       </header>
 
       <div className="w-full flex-1 flex flex-col items-center justify-center relative -translate-y-6 z-10">
-        <div className="relative flex items-center justify-center mb-6">
+        <div className="relative flex items-center justify-center mb-4">
           <svg className="absolute w-[280px] h-[280px] -rotate-90 pointer-events-none overflow-visible">
             <circle cx="140" cy="140" r="90" fill="transparent" stroke="rgba(255,255,255,0.03)" strokeWidth="4" />
             <circle cx="140" cy="140" r="90" fill="transparent" stroke={currentTheme.color} strokeWidth="4" strokeDasharray="565" strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-1000 ease-linear" style={{ filter: `drop-shadow(0 0 10px ${currentTheme.color}88)` }} />
@@ -210,18 +216,17 @@ const Timer: React.FC = () => {
         </div>
         
         <div className="text-center w-full px-10">
-          <div className="text-[5.5rem] font-thin tracking-tighter leading-none tabular-nums mb-2 transition-all duration-1000 text-white"
+          <div className="text-[5.5rem] font-thin tracking-tighter leading-none tabular-nums mb-10 transition-all duration-1000 text-white"
             style={{ textShadow: isActive ? `0 0 40px ${currentTheme.color}66` : 'none' }}
           >
             {formatTime(timeLeft)}
           </div>
 
-          {/* Animation Switcher Dots */}
           <div className="flex items-center justify-center gap-2.5 mb-10 h-8">
             {FOCUS_THEMES.map((t, idx) => (
               <button 
                 key={idx} 
-                onClick={() => setThemeIndex(idx)} 
+                onClick={() => { setThemeIndex(idx); }} 
                 className={`transition-all duration-500 rounded-full ${
                   themeIndex === idx ? 'w-2 h-2 scale-125 opacity-100 ring-4 ring-white/10' : 'w-1.5 h-1.5 opacity-20 hover:opacity-40'
                 }`} 
@@ -244,16 +249,38 @@ const Timer: React.FC = () => {
       {isCustomizing && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
           <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setIsCustomizing(false)} />
-          <div className="relative w-full max-w-xs bg-[#1c1c1e] rounded-[3rem] p-10 border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-300">
-            <h3 className="text-xl font-bold mb-10 text-center text-white/90 tracking-tight">Set Focus Session</h3>
-            <div className="space-y-10">
-              <div className="flex flex-col items-center">
-                <input type="number" value={customMins} onChange={(e) => setCustomMins(Math.min(999, Math.max(1, parseInt(e.target.value) || 1)))} className="bg-transparent text-8xl font-thin w-full text-center focus:outline-none text-white tabular-nums selection:bg-white/10" autoFocus min="1" max="999" />
-                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-6">Minutes</span>
+          <div className="relative w-full max-w-sm bg-[#1c1c1e] rounded-[3.5rem] p-8 border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-300">
+            <h3 className="text-xl font-bold mb-8 text-center text-white/90 tracking-tight">Focus Duration</h3>
+            
+            <div className="space-y-8">
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {PRESETS.map((preset) => (
+                  <button
+                    key={preset.label}
+                    onClick={() => { setCustomMins(preset.minutes); handleApplyCustomTime(preset.minutes); }}
+                    className="py-4 px-2 rounded-2xl bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/10 hover:text-white/80 active:scale-95 transition-all"
+                  >
+                    {preset.label} <span className="block text-[8px] opacity-40 mt-1">{preset.minutes}m</span>
+                  </button>
+                ))}
               </div>
+
+              <div className="flex flex-col items-center">
+                <input 
+                  type="number" 
+                  value={customMins} 
+                  onChange={(e) => setCustomMins(Math.min(999, Math.max(1, parseInt(e.target.value) || 1)))} 
+                  className="bg-transparent text-8xl font-thin w-full text-center focus:outline-none text-white tabular-nums selection:bg-white/10" 
+                  autoFocus 
+                  min="1" 
+                  max="999" 
+                />
+                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mt-4">Minutes</span>
+              </div>
+
               <div className="flex gap-4">
-                <button onClick={() => setIsCustomizing(false)} className="flex-1 py-5 rounded-[1.8rem] bg-white/5 text-xs font-bold text-white/40 active:scale-95 transition-all uppercase tracking-widest border border-white/5">Cancel</button>
-                <button onClick={handleApplyCustomTime} className="flex-1 py-5 rounded-[1.8rem] text-black text-xs font-bold active:scale-95 transition-all uppercase tracking-widest shadow-lg shadow-white/5" style={{ backgroundColor: currentTheme.color }}>Apply</button>
+                <button onClick={() => setIsCustomizing(false)} className="flex-1 py-5 rounded-[2rem] bg-white/5 text-[10px] font-bold text-white/40 active:scale-95 transition-all uppercase tracking-widest border border-white/5">Cancel</button>
+                <button onClick={() => handleApplyCustomTime(customMins)} className="flex-1 py-5 rounded-[2rem] text-black text-[10px] font-bold active:scale-95 transition-all uppercase tracking-widest shadow-lg shadow-white/5" style={{ backgroundColor: currentTheme.color }}>Apply</button>
               </div>
             </div>
           </div>

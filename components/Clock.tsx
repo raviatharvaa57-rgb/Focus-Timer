@@ -1,25 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Globe, MapPin } from 'lucide-react';
+import { Plus, X, Globe, MapPin, Sparkles, Loader2 } from 'lucide-react';
 import { CLOCK_THEMES } from '../constants';
-
-interface WorldLocation {
-  id: string;
-  name: string;
-  offset: number; // UTC offset in hours
-}
-
-const CITY_OFFSETS: Record<string, number> = {
-  'london': 0, 'paris': 1, 'berlin': 1, 'rome': 1, 'madrid': 1, 'amsterdam': 1,
-  'athens': 2, 'cairo': 2, 'jerusalem': 2, 'moscow': 3, 'dubai': 4,
-  'mumbai': 5.5, 'delhi': 5.5, 'bangkok': 7, 'jakarta': 7,
-  'beijing': 8, 'singapore': 8, 'perth': 8, 'hong kong': 8, 'tokyo': 9, 'seoul': 9,
-  'sydney': 11, 'melbourne': 11, 'auckland': 13,
-  'new york': -5, 'miami': -5, 'toronto': -5, 'dc': -5, 'boston': -5,
-  'chicago': -6, 'mexico city': -6, 'denver': -7,
-  'los angeles': -8, 'vancouver': -8, 'san francisco': -8, 'seattle': -8,
-  'honolulu': -10
-};
+import { WorldLocation } from '../types';
+import { GoogleGenAI, Type } from "@google/genai";
 
 const Clock: React.FC = () => {
   const [time, setTime] = useState(new Date());
@@ -27,13 +11,14 @@ const Clock: React.FC = () => {
   const [locations, setLocations] = useState<WorldLocation[]>(() => {
     const saved = localStorage.getItem('focus_clocks');
     return saved ? JSON.parse(saved) : [
-      { id: '1', name: 'Tokyo', offset: 9 },
-      { id: '2', name: 'London', offset: 0 },
-      { id: '3', name: 'New York', offset: -5 },
+      { id: '1', name: 'Tokyo', offset: 9, country: 'Japan' },
+      { id: '2', name: 'London', offset: 0, country: 'UK' },
+      { id: '3', name: 'New York', offset: -5, country: 'USA' },
     ];
   });
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   const currentTheme = CLOCK_THEMES[themeIndex];
 
@@ -47,7 +32,6 @@ const Clock: React.FC = () => {
   }, [locations]);
 
   useEffect(() => {
-    // Attempt to add local city if empty or on first run
     if (navigator.geolocation && !localStorage.getItem('focus_geo_done')) {
       navigator.geolocation.getCurrentPosition((pos) => {
         const offset = -new Date().getTimezoneOffset() / 60;
@@ -100,21 +84,48 @@ const Clock: React.FC = () => {
 
   const progress = time.getSeconds() / 60;
 
-  const handleAddLocation = () => {
-    if (!newName.trim()) return;
+  const handleAddLocation = async () => {
+    if (!newName.trim() || isSearching) return;
     
-    const normalizedCity = newName.toLowerCase().trim();
-    const detectedOffset = CITY_OFFSETS[normalizedCity] ?? 0;
-
-    const newLoc: WorldLocation = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: newName,
-      offset: detectedOffset,
-    };
-    
-    setLocations([newLoc, ...locations]);
-    setIsAdding(false);
-    setNewName('');
+    setIsSearching(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Find the current UTC offset for "${newName}". Also identify the full name of the city and country. Return the offset as a number (e.g., -5 for NYC, 5.5 for Mumbai).`,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              cityName: { type: Type.STRING },
+              country: { type: Type.STRING },
+              offset: { type: Type.NUMBER },
+              mood: { type: Type.STRING, description: "A one word vibe of the city right now" }
+            },
+            required: ["cityName", "country", "offset"]
+          }
+        }
+      });
+      
+      const data = JSON.parse(response.text);
+      const newLoc: WorldLocation = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: data.cityName,
+        country: data.country,
+        offset: data.offset,
+        mood: data.mood
+      };
+      
+      setLocations([newLoc, ...locations]);
+      setIsAdding(false);
+      setNewName('');
+    } catch (error) {
+      console.error("AI Error:", error);
+      // Fallback or user notification
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const removeLocation = (id: string) => {
@@ -124,7 +135,7 @@ const Clock: React.FC = () => {
   return (
     <div className={`h-full flex flex-col items-center pt-8 pb-32 px-10 transition-all duration-1000 bg-gradient-to-b ${currentTheme.bgGradient} ${currentTheme.textColor} overflow-hidden`}>
       
-      <header className="w-full flex justify-between items-center mb-6">
+      <header className="w-full flex justify-between items-center mb-6 z-10">
         <h1 className="text-4xl font-bold tracking-tight text-white">World Clock</h1>
         <button 
           onClick={() => setIsAdding(true)}
@@ -177,9 +188,10 @@ const Clock: React.FC = () => {
               <div className="flex items-center space-x-2 mb-1">
                 {loc.id === 'local' ? <MapPin size={10} className="text-orange-500" /> : <Globe size={10} className="text-white/20" />}
                 <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-black">{loc.name}</p>
+                {loc.mood && <span className="text-[8px] bg-white/5 px-1.5 py-0.5 rounded-full text-white/20 uppercase tracking-widest">{loc.mood}</span>}
               </div>
               <p className="text-[9px] text-white/20 font-medium uppercase tracking-wider">
-                {getTimeDifferenceLabel(loc.offset)}
+                {loc.country ? `${loc.country} • ` : ''}{getTimeDifferenceLabel(loc.offset)}
               </p>
             </div>
             
@@ -207,19 +219,30 @@ const Clock: React.FC = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsAdding(false)} />
           <div className="relative w-full max-w-xs apple-blur rounded-[2.5rem] p-8 border border-white/10 shadow-2xl animate-in zoom-in-95 duration-300">
-            <h3 className="text-xl font-bold mb-6 text-center text-white">Choose City</h3>
+            <div className="flex items-center gap-2 mb-6 justify-center">
+              <Sparkles size={18} className="text-orange-400" />
+              <h3 className="text-xl font-bold text-white">Smart Search</h3>
+            </div>
             <div className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[10px] uppercase tracking-[0.2em] opacity-30 font-black ml-1">City / Region</label>
-                <input 
-                  type="text" 
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g. Paris, Tokyo, New York"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-4 focus:outline-none focus:border-orange-500/50 transition-all text-white placeholder:text-white/10"
-                  autoFocus
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddLocation()}
-                />
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Enter any place on Earth..."
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-4 pr-10 focus:outline-none focus:border-orange-500/50 transition-all text-white placeholder:text-white/10"
+                    autoFocus
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddLocation()}
+                  />
+                  {isSearching && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="animate-spin text-orange-500" size={18} />
+                    </div>
+                  )}
+                </div>
+                <p className="text-[8px] text-white/20 mt-1 ml-1 uppercase tracking-widest">Powered by Gemini AI</p>
               </div>
               
               <div className="flex space-x-3 pt-2">
@@ -231,9 +254,10 @@ const Clock: React.FC = () => {
                 </button>
                 <button 
                   onClick={handleAddLocation}
-                  className="flex-1 py-4 rounded-2xl bg-white text-black text-xs font-bold uppercase tracking-widest active:scale-95 transition-all"
+                  disabled={isSearching || !newName.trim()}
+                  className={`flex-1 py-4 rounded-2xl text-black text-xs font-bold uppercase tracking-widest active:scale-95 transition-all ${isSearching || !newName.trim() ? 'bg-white/10 text-white/20' : 'bg-white'}`}
                 >
-                  Add
+                  {isSearching ? '...' : 'Add'}
                 </button>
               </div>
             </div>

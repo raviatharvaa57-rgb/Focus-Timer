@@ -23,3 +23,11 @@ export interface LapTime {
   time: number;
   diff: number;
 }
+
+export interface WorldLocation {
+  id: string;
+  name: string;
+  offset: number; // UTC offset in hours
+  country?: string;
+  mood?: string;
+}
