@@ -43,31 +43,31 @@ const App: React.FC = () => {
         {renderContent()}
       </main>
 
-      {/* Tab Bar Container */}
-      <div className="w-full px-5 safe-bottom z-[1000] mb-6">
-        <nav className="mx-auto max-w-lg h-20 apple-blur rounded-[2.5rem] border border-white/10 px-2 flex justify-around items-center shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
+      {/* Tab Bar Container - Moved lower with mb-2 and shorter height h-16 */}
+      <div className="w-full px-5 safe-bottom z-[1000] mb-2">
+        <nav className="mx-auto max-w-lg h-16 apple-blur rounded-[2rem] border border-white/10 px-2 flex justify-around items-center shadow-[0_15px_40px_rgba(0,0,0,0.8)]">
           <TabButton 
             active={activeTab === 'clock'} 
             onClick={() => handleTabChange('clock')} 
-            icon={<ClockIcon size={20} strokeWidth={1.5} />} 
+            icon={<ClockIcon size={18} strokeWidth={1.5} />} 
             label="World" 
           />
           <TabButton 
             active={activeTab === 'alarm'} 
             onClick={() => handleTabChange('alarm')} 
-            icon={<AlarmClock size={20} strokeWidth={1.5} />} 
+            icon={<AlarmClock size={18} strokeWidth={1.5} />} 
             label="Alarm" 
           />
           <TabButton 
             active={activeTab === 'stopwatch'} 
             onClick={() => handleTabChange('stopwatch')} 
-            icon={<StopwatchIcon size={20} strokeWidth={1.5} />} 
+            icon={<StopwatchIcon size={18} strokeWidth={1.5} />} 
             label="Stop" 
           />
           <TabButton 
             active={activeTab === 'timer'} 
             onClick={() => handleTabChange('timer')} 
-            icon={<TimerIcon size={20} strokeWidth={1.5} />} 
+            icon={<TimerIcon size={18} strokeWidth={1.5} />} 
             label="Focus" 
           />
         </nav>
@@ -86,19 +86,19 @@ interface TabButtonProps {
 const TabButton: React.FC<TabButtonProps> = ({ active, onClick, icon, label }) => (
   <button 
     onClick={onClick}
-    className={`flex flex-col items-center justify-center space-y-1.5 flex-1 h-full transition-all duration-300 active:scale-90 ${
+    className={`flex flex-col items-center justify-center space-y-1 flex-1 h-full transition-all duration-300 active:scale-90 ${
       active ? 'text-white' : 'text-zinc-500'
     }`}
   >
-    <div className={`relative flex items-center justify-center p-3 rounded-2xl transition-all duration-300 ${
-      active ? 'bg-white/10 shadow-lg' : 'bg-transparent'
+    <div className={`relative flex items-center justify-center p-2 rounded-xl transition-all duration-300 ${
+      active ? 'bg-white/10' : 'bg-transparent'
     }`}>
       {icon}
       {active && (
         <div className="absolute -bottom-1 w-1 h-1 bg-white rounded-full shadow-[0_0_8px_white]" />
       )}
     </div>
-    <span className={`text-[9px] font-bold tracking-[0.12em] transition-all duration-300 uppercase ${active ? 'opacity-100' : 'opacity-40'}`}>
+    <span className={`text-[8px] font-bold tracking-[0.12em] transition-all duration-300 uppercase ${active ? 'opacity-100' : 'opacity-40'}`}>
       {label}
     </span>
   </button>
