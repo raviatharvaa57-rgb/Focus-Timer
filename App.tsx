@@ -5,26 +5,28 @@ import {
   AlarmClock, 
   Timer as StopwatchIcon, 
   Globe as ClockIcon,
+  User as UserIcon,
   LogOut
 } from 'lucide-react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
-import { auth } from './firebase';
+import { auth, db } from './firebase';
 import { AppTab } from './types';
 import Timer from './components/Timer';
 import Alarm from './components/Alarm';
 import Stopwatch from './components/Stopwatch';
 import Clock from './components/Clock';
 import Auth from './components/Auth';
+import Profile from './components/Profile';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AppTab>('timer');
   const [user, setUser] = useState<firebase.User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
-      // Only set the user if they are verified
       if (currentUser && currentUser.emailVerified) {
         setUser(currentUser);
       } else {
@@ -69,16 +71,29 @@ const App: React.FC = () => {
     <div className="fixed inset-0 flex flex-col bg-black overflow-hidden select-none text-white transition-opacity duration-700">
       <div className="fixed inset-0 pointer-events-none z-[60] bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
       
-      <button 
-        onClick={handleSignOut}
-        className="fixed top-16 right-8 z-[100] w-10 h-10 rounded-full flex items-center justify-center text-zinc-600 hover:text-white transition-colors bg-white/5 active:scale-90"
-      >
-        <LogOut size={16} />
-      </button>
+      {/* Top Header Buttons */}
+      <div className="fixed top-16 left-8 right-8 z-[100] flex justify-between">
+        <button 
+          onClick={() => setShowProfile(true)}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-all bg-white/5 border border-white/5 active:scale-90 shadow-xl backdrop-blur-md"
+        >
+          <UserIcon size={18} strokeWidth={1.5} />
+        </button>
+        <button 
+          onClick={handleSignOut}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-600 hover:text-white transition-all bg-white/5 active:scale-90"
+        >
+          <LogOut size={16} />
+        </button>
+      </div>
 
       <main className="flex-1 relative overflow-hidden">
         {renderContent()}
       </main>
+
+      {showProfile && (
+        <Profile onClose={() => setShowProfile(false)} />
+      )}
 
       <div className="w-full px-5 safe-bottom z-[1000] mb-5">
         <nav className="mx-auto max-w-lg h-16 apple-blur rounded-[2.5rem] border border-white/10 px-2 flex justify-around items-center shadow-[0_25px_50px_rgba(0,0,0,0.8)]">
