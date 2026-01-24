@@ -1,19 +1,39 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   Hourglass as TimerIcon, 
   AlarmClock, 
   Timer as StopwatchIcon, 
-  Globe as ClockIcon
+  Globe as ClockIcon,
+  LogOut
 } from 'lucide-react';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import { auth } from './firebase';
 import { AppTab } from './types';
 import Timer from './components/Timer';
 import Alarm from './components/Alarm';
 import Stopwatch from './components/Stopwatch';
 import Clock from './components/Clock';
+import Auth from './components/Auth';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AppTab>('timer');
+  const [user, setUser] = useState<firebase.User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      // Only set the user if they are verified
+      if (currentUser && currentUser.emailVerified) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleTabChange = useCallback((tab: AppTab) => {
     if (activeTab === tab) return;
@@ -22,6 +42,15 @@ const App: React.FC = () => {
       window.navigator.vibrate(10);
     }
   }, [activeTab]);
+
+  const handleSignOut = async () => {
+    try {
+      await auth.signOut();
+      if (window.navigator.vibrate) window.navigator.vibrate(10);
+    } catch (err) {
+      console.error("Sign out error", err);
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -33,17 +62,24 @@ const App: React.FC = () => {
     }
   };
 
+  if (loading) return null;
+  if (!user) return <Auth />;
+
   return (
     <div className="fixed inset-0 flex flex-col bg-black overflow-hidden select-none text-white transition-opacity duration-700">
-      {/* Background Ambience */}
       <div className="fixed inset-0 pointer-events-none z-[60] bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
       
-      {/* Feature Views */}
+      <button 
+        onClick={handleSignOut}
+        className="fixed top-16 right-8 z-[100] w-10 h-10 rounded-full flex items-center justify-center text-zinc-600 hover:text-white transition-colors bg-white/5 active:scale-90"
+      >
+        <LogOut size={16} />
+      </button>
+
       <main className="flex-1 relative overflow-hidden">
         {renderContent()}
       </main>
 
-      {/* Navigation Tab Bar */}
       <div className="w-full px-5 safe-bottom z-[1000] mb-5">
         <nav className="mx-auto max-w-lg h-16 apple-blur rounded-[2.5rem] border border-white/10 px-2 flex justify-around items-center shadow-[0_25px_50px_rgba(0,0,0,0.8)]">
           <TabButton 

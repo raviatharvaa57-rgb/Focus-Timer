@@ -12,7 +12,8 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "lucide-react": "0.474.0",
-    "@google/genai": "1.38.0"
+    "@google/genai": "1.38.0",
+    "firebase": "^12.8.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
