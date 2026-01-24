@@ -6,7 +6,8 @@ import {
   Timer as StopwatchIcon, 
   Globe as ClockIcon,
   User as UserIcon,
-  LogOut
+  LogOut,
+  Plus
 } from 'lucide-react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
@@ -24,6 +25,9 @@ const App: React.FC = () => {
   const [user, setUser] = useState<firebase.User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showProfile, setShowProfile] = useState(false);
+  
+  // Shared state for the action modals of each tab
+  const [isActionActive, setIsActionActive] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
@@ -40,6 +44,7 @@ const App: React.FC = () => {
   const handleTabChange = useCallback((tab: AppTab) => {
     if (activeTab === tab) return;
     setActiveTab(tab);
+    setIsActionActive(false); // Close any open action modal when switching tabs
     if (window.navigator.vibrate) {
       window.navigator.vibrate(10);
     }
@@ -56,32 +61,45 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'timer': return <Timer />;
-      case 'alarm': return <Alarm />;
+      case 'timer': return <Timer isCustomizing={isActionActive} setIsCustomizing={setIsActionActive} />;
+      case 'alarm': return <Alarm isAdding={isActionActive} setIsAdding={setIsActionActive} />;
       case 'stopwatch': return <Stopwatch />;
-      case 'clock': return <Clock />;
-      default: return <Timer />;
+      case 'clock': return <Clock isAdding={isActionActive} setIsAdding={setIsActionActive} />;
+      default: return <Timer isCustomizing={isActionActive} setIsCustomizing={setIsActionActive} />;
     }
   };
 
   if (loading) return null;
   if (!user) return <Auth />;
 
+  // Only show the plus button for tabs that use it
+  const showPlusButton = activeTab !== 'stopwatch';
+
   return (
     <div className="fixed inset-0 flex flex-col bg-black overflow-hidden select-none text-white transition-opacity duration-700">
       <div className="fixed inset-0 pointer-events-none z-[60] bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
       
-      {/* Top Header Buttons */}
-      <div className="fixed top-16 left-8 right-8 z-[100] flex justify-between">
+      {/* Top Header Buttons - Plus is now in the middle of Profile and LogOut */}
+      <div className="fixed top-16 right-8 z-[100] flex items-center gap-3">
         <button 
           onClick={() => setShowProfile(true)}
           className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-all bg-white/5 border border-white/5 active:scale-90 shadow-xl backdrop-blur-md"
         >
           <UserIcon size={18} strokeWidth={1.5} />
         </button>
+
+        {showPlusButton && (
+          <button 
+            onClick={() => setIsActionActive(true)}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-orange-500 hover:text-orange-400 transition-all bg-white/5 border border-white/5 active:scale-90 shadow-xl backdrop-blur-md"
+          >
+            <Plus size={18} strokeWidth={2.5} />
+          </button>
+        )}
+
         <button 
           onClick={handleSignOut}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-600 hover:text-white transition-all bg-white/5 active:scale-90"
+          className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-600 hover:text-white transition-all bg-white/5 border border-white/5 active:scale-90 shadow-xl backdrop-blur-md"
         >
           <LogOut size={16} />
         </button>

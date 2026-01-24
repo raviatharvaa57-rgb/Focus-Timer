@@ -116,6 +116,11 @@ const Auth: React.FC = () => {
     setResetSentEmail(null);
   };
 
+  const enterResetMode = () => {
+    setIsResetting(true);
+    setError(null);
+  };
+
   const returnToLogin = () => {
     setVerificationEmail(null);
     setResetSentEmail(null);
@@ -180,6 +185,17 @@ const Auth: React.FC = () => {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              {isLogin && (
+                <div className="flex justify-end px-2">
+                  <button 
+                    type="button" 
+                    onClick={enterResetMode}
+                    className="text-[8px] uppercase tracking-widest text-orange-500/60 hover:text-orange-500 font-black transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
             </div>
           )}
           {!isLogin && !isResetting && (
@@ -194,7 +210,12 @@ const Auth: React.FC = () => {
           </button>
         </form>
         <div className="mt-8 text-center">
-           <button onClick={switchMode} className="text-[10px] text-zinc-500 hover:text-white font-black uppercase tracking-widest transition-colors">{isLogin ? "Create an account" : "Back to sign in"}</button>
+           <button 
+             onClick={isResetting ? returnToLogin : switchMode} 
+             className="text-[10px] text-zinc-500 hover:text-white font-black uppercase tracking-widest transition-colors"
+           >
+             {isResetting ? "Back to sign in" : (isLogin ? "Create an account" : "Back to sign in")}
+           </button>
         </div>
       </div>
     </div>

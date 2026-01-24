@@ -1,11 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Globe, MapPin, Sparkles, Loader2 } from 'lucide-react';
+import { X, Globe, MapPin, Sparkles, Loader2 } from 'lucide-react';
 import { CLOCK_THEMES } from '../constants';
 import { WorldLocation } from '../types';
 import { GoogleGenAI, Type } from "@google/genai";
 
-const Clock: React.FC = () => {
+interface ClockProps {
+  isAdding: boolean;
+  setIsAdding: (val: boolean) => void;
+}
+
+const Clock: React.FC<ClockProps> = ({ isAdding, setIsAdding }) => {
   const [time, setTime] = useState(new Date());
   const [themeIndex, setThemeIndex] = useState(0);
   const [locations, setLocations] = useState<WorldLocation[]>(() => {
@@ -16,7 +21,6 @@ const Clock: React.FC = () => {
       { id: '3', name: 'New York', offset: -5, country: 'USA', mood: 'Busy' },
     ];
   });
-  const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +69,6 @@ const Clock: React.FC = () => {
   const getFormattedLocalTime = (baseTime: Date, offset: number) => {
     const utc = baseTime.getTime() + (baseTime.getTimezoneOffset() * 60000);
     const targetDate = new Date(utc + (3600000 * offset));
-    
     const hours = targetDate.getHours().toString().padStart(2, '0');
     const minutes = targetDate.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
@@ -87,7 +90,6 @@ const Clock: React.FC = () => {
 
   const handleAddLocation = async () => {
     if (!newName.trim() || isSearching) return;
-    
     setIsSearching(true);
     setError(null);
     try {
@@ -109,11 +111,7 @@ const Clock: React.FC = () => {
           }
         }
       });
-      
-      const rawText = response.text;
-      const cleanedText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-      const data = JSON.parse(cleanedText);
-      
+      const data = JSON.parse(response.text.replace(/```json/g, '').replace(/```/g, '').trim());
       const newLoc: WorldLocation = {
         id: Math.random().toString(36).substr(2, 9),
         name: data.cityName,
@@ -121,7 +119,6 @@ const Clock: React.FC = () => {
         offset: data.offset,
         mood: data.mood || 'Vibrant'
       };
-      
       setLocations([newLoc, ...locations]);
       setIsAdding(false);
       setNewName('');
@@ -141,29 +138,18 @@ const Clock: React.FC = () => {
 
   return (
     <div className={`h-full flex flex-col items-center pt-8 pb-32 px-10 transition-all duration-1000 bg-gradient-to-b ${currentTheme.bgGradient} ${currentTheme.textColor} overflow-hidden`}>
-      
       <header className="w-full flex justify-between items-center mb-6 z-10 pt-8 px-0 relative">
         <h1 className="text-4xl font-bold tracking-tight text-white">World</h1>
       </header>
-
-      {/* Floating Plus Button - Slightly down */}
-      <button 
-        onClick={() => setIsAdding(true)}
-        className="fixed bottom-28 right-8 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center text-orange-500 active:scale-90 transition-all border border-white/20 apple-blur shadow-[0_15px_30px_rgba(0,0,0,0.5)] z-[100]"
-      >
-        <Plus size={20} strokeWidth={2} />
-      </button>
 
       <div className="relative w-64 h-64 md:w-72 md:h-72 flex items-center justify-center mb-10 shrink-0">
         <svg className="absolute w-full h-full -rotate-90 transform overflow-visible" viewBox="0 0 200 200">
           <circle cx="100" cy="100" r="90" className={`${currentTheme.ringColor} fill-transparent`} strokeWidth="0.5" />
           <circle cx="100" cy="100" r="90" stroke="currentColor" strokeWidth="1.5" strokeDasharray="1" strokeDashoffset={1 - progress} pathLength="1" className={`fill-transparent transition-all duration-1000 linear ${currentTheme.accentColor}`} strokeLinecap="round" />
         </svg>
-
         {[...Array(12)].map((_, i) => (
           <div key={i} className={`absolute w-[1px] h-3 transition-colors duration-700 ${currentTheme.markerColor}`} style={{ transform: `rotate(${i * 30}deg) translateY(-85px)` }} />
         ))}
-        
         <div className="absolute inset-0 flex items-center justify-center">
           <div className={`absolute bottom-1/2 w-[2px] h-14 rounded-full origin-bottom transition-all duration-500 ${currentTheme.handColor}`} style={{ transform: `rotate(${hourDegrees}deg)` }} />
           <div className={`absolute bottom-1/2 w-[1.5px] h-20 rounded-full origin-bottom transition-all duration-500 ${currentTheme.handColor} opacity-60`} style={{ transform: `rotate(${minuteDegrees}deg)` }} />
@@ -203,7 +189,6 @@ const Clock: React.FC = () => {
                 {loc.country ? `${loc.country} • ` : ''}{getTimeDifferenceLabel(loc.offset)}
               </p>
             </div>
-            
             <div className="flex items-center space-x-4">
               <p className={`text-3xl font-light tracking-tight tabular-nums ${currentTheme.textColor}`}>
                 {getFormattedLocalTime(time, loc.offset)}
@@ -217,11 +202,6 @@ const Clock: React.FC = () => {
             </div>
           </div>
         ))}
-        {locations.length === 0 && (
-          <div className="py-12 text-center text-white/10 text-[10px] uppercase tracking-[0.5em] font-black">
-            Empty Horizon
-          </div>
-        )}
       </div>
 
       {isAdding && (
@@ -254,7 +234,6 @@ const Clock: React.FC = () => {
                 {error && <p className="text-[10px] text-red-400 font-bold ml-1">{error}</p>}
                 <p className="text-[8px] text-white/10 mt-2 ml-1 uppercase tracking-[0.3em] font-black">Powered by Gemini 3</p>
               </div>
-              
               <div className="flex space-x-3">
                 <button 
                   onClick={() => setIsAdding(false)}

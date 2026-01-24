@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Volume2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { AlarmItem } from '../types';
 
 const ALARM_SOUNDS = [
@@ -13,7 +13,12 @@ const ALARM_SOUNDS = [
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const FULL_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-const Alarm: React.FC = () => {
+interface AlarmProps {
+  isAdding: boolean;
+  setIsAdding: (val: boolean) => void;
+}
+
+const Alarm: React.FC<AlarmProps> = ({ isAdding, setIsAdding }) => {
   const [alarms, setAlarms] = useState<AlarmItem[]>(() => {
     const saved = localStorage.getItem('focus_alarms');
     return saved ? JSON.parse(saved) : [
@@ -22,12 +27,10 @@ const Alarm: React.FC = () => {
     ];
   });
   
-  const [isAdding, setIsAdding] = useState(false);
   const [newLabel, setNewLabel] = useState('');
   const [selectedDays, setSelectedDays] = useState<string[]>(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
   const [selectedSoundId, setSelectedSoundId] = useState('minimal');
   
-  // Custom Time Picker State
   const [pickerHour, setPickerHour] = useState(7);
   const [pickerMinute, setPickerMinute] = useState(0);
   const [pickerPeriod, setPickerPeriod] = useState<'AM' | 'PM'>('AM');
@@ -54,7 +57,6 @@ const Alarm: React.FC = () => {
   };
 
   const addAlarm = () => {
-    // Convert 12h to 24h
     let h = pickerHour;
     if (pickerPeriod === 'PM' && h < 12) h += 12;
     if (pickerPeriod === 'AM' && h === 12) h = 0;
@@ -98,25 +100,19 @@ const Alarm: React.FC = () => {
 
     return (
       <div className="flex items-center justify-center space-x-4 py-6 bg-white/5 rounded-[2.5rem] border border-white/5 shadow-inner">
-        {/* Hour Column */}
         <div className="flex flex-col items-center">
           <button onClick={incrementHour} className="p-2 text-white/20 hover:text-white transition-colors"><ChevronUp size={20}/></button>
           <div className="text-5xl font-extralight tabular-nums py-2 w-16 text-center">{pickerHour}</div>
           <button onClick={decrementHour} className="p-2 text-white/20 hover:text-white transition-colors"><ChevronDown size={20}/></button>
           <span className="text-[8px] uppercase tracking-widest opacity-20 font-black">Hour</span>
         </div>
-
         <div className="text-4xl font-thin opacity-20 pb-4">:</div>
-
-        {/* Minute Column */}
         <div className="flex flex-col items-center">
           <button onClick={incrementMin} className="p-2 text-white/20 hover:text-white transition-colors"><ChevronUp size={20}/></button>
           <div className="text-5xl font-extralight tabular-nums py-2 w-20 text-center">{pickerMinute.toString().padStart(2, '0')}</div>
           <button onClick={decrementMin} className="p-2 text-white/20 hover:text-white transition-colors"><ChevronDown size={20}/></button>
           <span className="text-[8px] uppercase tracking-widest opacity-20 font-black">Min</span>
         </div>
-
-        {/* Period Column */}
         <div className="flex flex-col items-center ml-4">
           <button onClick={togglePeriod} className="p-2 text-white/20 hover:text-white transition-colors"><ChevronUp size={20}/></button>
           <div className="text-2xl font-bold py-2 px-3 bg-white/10 rounded-xl transition-all w-16 text-center">{pickerPeriod}</div>
@@ -132,14 +128,6 @@ const Alarm: React.FC = () => {
       <header className="flex justify-between items-center pt-16 pb-6 shrink-0 relative">
         <h1 className="text-3xl font-bold tracking-tight">Alarm</h1>
       </header>
-
-      {/* Floating Plus Button - Moved slightly down */}
-      <button 
-        onClick={() => { setIsAdding(true); setSelectedSoundId('minimal'); }}
-        className="fixed bottom-28 right-8 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center text-orange-500 active:scale-90 transition-all border border-white/20 apple-blur shadow-[0_15px_30px_rgba(0,0,0,0.5)] z-[100]"
-      >
-        <Plus size={22} />
-      </button>
 
       <div className="flex-1 overflow-y-auto hide-scrollbar space-y-4 pb-48">
         {alarms.map((alarm) => {
@@ -187,10 +175,8 @@ const Alarm: React.FC = () => {
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => { setIsAdding(false); stopPreview(); }} />
           <div className="relative w-full max-w-lg apple-blur rounded-[3rem] p-8 border border-white/10 shadow-2xl animate-in slide-in-from-bottom-full duration-500 ease-out pb-10">
             <h3 className="text-lg font-bold mb-6 text-center opacity-40 uppercase tracking-widest">Add Alarm</h3>
-            
             <div className="space-y-6">
               <WheelPicker />
-              
               <div className="space-y-3">
                 <p className="text-[9px] uppercase tracking-[0.3em] opacity-20 font-black ml-1">Label</p>
                 <input 
@@ -201,7 +187,6 @@ const Alarm: React.FC = () => {
                   className="w-full bg-white/5 rounded-2xl py-4 px-5 text-sm font-medium focus:outline-none border border-white/5 text-white placeholder:text-white/10"
                 />
               </div>
-
               <div className="space-y-3">
                 <p className="text-[9px] uppercase tracking-[0.3em] opacity-20 font-black ml-1">Repeat</p>
                 <div className="flex justify-between gap-1.5">
@@ -220,7 +205,6 @@ const Alarm: React.FC = () => {
                   ))}
                 </div>
               </div>
-
               <div className="flex space-x-3 pt-4">
                 <button 
                   onClick={() => { setIsAdding(false); stopPreview(); }} 

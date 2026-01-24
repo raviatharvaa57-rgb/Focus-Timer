@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Plus } from 'lucide-react';
+import { Play, Pause, RotateCcw } from 'lucide-react';
 import { FOCUS_THEMES, PRESETS } from '../constants';
 import ThemeAnimator from './ThemeAnimator';
 
@@ -105,12 +105,16 @@ const ThemeBackgroundFX: React.FC<{ themeId: string; isActive: boolean }> = ({ t
   );
 };
 
-const Timer: React.FC = () => {
+interface TimerProps {
+  isCustomizing: boolean;
+  setIsCustomizing: (val: boolean) => void;
+}
+
+const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [totalTime, setTotalTime] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
   const [themeIndex, setThemeIndex] = useState(0);
-  const [isCustomizing, setIsCustomizing] = useState(false);
   const [customMins, setCustomMins] = useState(25);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
@@ -197,19 +201,16 @@ const Timer: React.FC = () => {
     if (touchStart.current !== null) {
       const currentTouch = e.targetTouches[0].clientX;
       const diff = currentTouch - touchStart.current;
-      // Dampen the movement as it gets further
       setSwipeOffset(diff * 0.4);
     }
   };
 
   const onTouchEnd = () => {
     if (touchStart.current === null) return;
-    
     if (Math.abs(swipeOffset) > minSwipeDistance / 2) {
       if (swipeOffset < 0) nextTheme();
       else prevTheme();
     }
-    
     setSwipeOffset(0);
     touchStart.current = null;
   };
@@ -266,17 +267,7 @@ const Timer: React.FC = () => {
         </div>
       </header>
 
-      {/* Floating Plus Button - Slightly down */}
-      <button 
-        onClick={() => setIsCustomizing(true)}
-        className="fixed bottom-28 right-8 w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/20 bg-white/5 apple-blur shadow-[0_15px_30px_rgba(0,0,0,0.5)] z-[100]"
-        style={{ color: currentTheme.color }}
-      >
-        <Plus size={20} strokeWidth={2.5} />
-      </button>
-
       <div className="w-full flex-1 flex flex-col items-center justify-center relative -translate-y-12 z-10 px-6">
-        {/* Swippable Centerpiece */}
         <div 
           className="relative flex items-center justify-center mb-10 group cursor-pointer transition-transform duration-150 ease-out"
           style={{ transform: `translateX(${swipeOffset}px) scale(${1 - Math.abs(swipeOffset) / 1000})` }}
