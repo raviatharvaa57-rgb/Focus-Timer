@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
-import { Loader2, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight, Mail, Key } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Mail, Key } from 'lucide-react';
 
 const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -41,12 +41,20 @@ const Auth: React.FC = () => {
     const userRef = db.collection('users').doc(user.uid);
     const doc = await userRef.get();
     
+    const finalName = displayName || user.displayName || 'Focus User';
+    
     if (!doc.exists) {
       await userRef.set({
-        name: displayName || user.displayName || 'Focus User',
+        name: finalName,
         email: user.email,
         photoFileName: 'default_avatar.png',
         createdAt: new Date().toISOString()
+      });
+    } else {
+      // Force update if we have a name to ensure persistence
+      await userRef.update({
+        name: finalName,
+        updatedAt: new Date().toISOString()
       });
     }
   };
@@ -70,7 +78,7 @@ const Auth: React.FC = () => {
             await auth.signOut();
             setVerificationEmail(email);
           } else {
-            // Check and sync user doc
+            // Ensure profile is synced on login
             await syncUserToFirestore(cred.user);
             localStorage.removeItem('focus_remembered_creds');
           }
@@ -81,6 +89,8 @@ const Auth: React.FC = () => {
         }
         const cred = await auth.createUserWithEmailAndPassword(email, password);
         if (cred.user) {
+          // Explicitly update profile display name
+          await cred.user.updateProfile({ displayName: name });
           // Register in Firestore immediately
           await syncUserToFirestore(cred.user, name);
           
@@ -101,7 +111,7 @@ const Auth: React.FC = () => {
       } else if (isLogin) {
         setError("Invalid email or password");
       } else {
-        setError(err.code === 'auth/email-already-in-use' ? "User already exists. Sign in?" : err.message);
+        setError(err.code === 'auth/email-already-in-use' ? "User already exists" : err.message);
       }
     } finally {
       setLoading(false);
@@ -169,18 +179,18 @@ const Auth: React.FC = () => {
           {!isLogin && !isResetting && (
             <div className="space-y-2">
               <label className="text-[9px] uppercase tracking-widest text-zinc-600 font-black ml-4">Name</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Display Name" className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white" required={!isLogin && !isResetting} />
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Display Name" className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white focus:outline-none" required={!isLogin && !isResetting} />
             </div>
           )}
           <div className="space-y-2">
             <label className="text-[9px] uppercase tracking-widest text-zinc-600 font-black ml-4">Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white" required />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white focus:outline-none" required />
           </div>
           {!isResetting && (
             <div className="space-y-2">
               <label className="text-[9px] uppercase tracking-widest text-zinc-600 font-black ml-4">Password</label>
               <div className="relative">
-                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white" required />
+                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white focus:outline-none" required />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white">
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -201,11 +211,11 @@ const Auth: React.FC = () => {
           {!isLogin && !isResetting && (
             <div className="space-y-2">
               <label className="text-[9px] uppercase tracking-widest text-zinc-600 font-black ml-4">Confirm</label>
-              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm Password" className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white" required />
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm Password" className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white focus:outline-none" required />
             </div>
           )}
           {error && <div className="p-4 rounded-2xl bg-red-500/10 text-red-500 border border-red-500/10 text-[11px] font-bold text-center">{error}</div>}
-          <button type="submit" disabled={loading} className="w-full bg-white text-black rounded-[1.75rem] py-5 px-6 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center">
+          <button type="submit" disabled={loading} className="w-full bg-white text-black rounded-[1.75rem] py-5 px-6 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center disabled:opacity-50">
             {loading ? <Loader2 className="animate-spin" size={20} /> : (isResetting ? "Get Reset Link" : (isLogin ? "Sign In" : "Sign Up"))}
           </button>
         </form>

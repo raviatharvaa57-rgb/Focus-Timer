@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
-import { auth, db } from './firebase';
+import { auth } from './firebase';
 import { AppTab } from './types';
 import Timer from './components/Timer';
 import Alarm from './components/Alarm';
@@ -19,14 +19,13 @@ import Stopwatch from './components/Stopwatch';
 import Clock from './components/Clock';
 import Auth from './components/Auth';
 import Profile from './components/Profile';
+import { FOCUS_THEMES } from './constants';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AppTab>('timer');
   const [user, setUser] = useState<firebase.User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showProfile, setShowProfile] = useState(false);
-  
-  // Shared state for the action modals of each tab
   const [isActionActive, setIsActionActive] = useState(false);
 
   useEffect(() => {
@@ -44,7 +43,7 @@ const App: React.FC = () => {
   const handleTabChange = useCallback((tab: AppTab) => {
     if (activeTab === tab) return;
     setActiveTab(tab);
-    setIsActionActive(false); // Close any open action modal when switching tabs
+    setIsActionActive(false);
     if (window.navigator.vibrate) {
       window.navigator.vibrate(10);
     }
@@ -59,12 +58,21 @@ const App: React.FC = () => {
     }
   };
 
+  const getDomeColor = () => {
+    if (activeTab === 'timer') return FOCUS_THEMES[0].color;
+    if (activeTab === 'alarm') return '#f97316'; // Vivid Orange for Alarm
+    if (activeTab === 'clock') return '#3b82f6'; // Deep Blue for World Clock
+    if (activeTab === 'stopwatch') return '#ffffff'; // White for Stopwatch
+    return '#ffffff';
+  };
+
   const renderContent = () => {
+    if (!user) return null;
     switch (activeTab) {
       case 'timer': return <Timer isCustomizing={isActionActive} setIsCustomizing={setIsActionActive} />;
-      case 'alarm': return <Alarm isAdding={isActionActive} setIsAdding={setIsActionActive} />;
+      case 'alarm': return <Alarm user={user} isAdding={isActionActive} setIsAdding={setIsActionActive} />;
       case 'stopwatch': return <Stopwatch />;
-      case 'clock': return <Clock isAdding={isActionActive} setIsAdding={setIsActionActive} />;
+      case 'clock': return <Clock user={user} isAdding={isActionActive} setIsAdding={setIsActionActive} />;
       default: return <Timer isCustomizing={isActionActive} setIsCustomizing={setIsActionActive} />;
     }
   };
@@ -72,18 +80,27 @@ const App: React.FC = () => {
   if (loading) return null;
   if (!user) return <Auth />;
 
-  // Only show the plus button for tabs that use it
-  const showPlusButton = activeTab !== 'stopwatch';
+  const showPlusButton = activeTab === 'timer' || activeTab === 'alarm';
 
   return (
     <div className="fixed inset-0 flex flex-col bg-black overflow-hidden select-none text-white transition-opacity duration-700">
-      <div className="fixed inset-0 pointer-events-none z-[60] bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
+      {/* Immersive Background Glow */}
+      <div className="fixed inset-0 pointer-events-none z-[60] bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)]" />
       
-      {/* Top Header Buttons - Plus is now in the middle of Profile and LogOut */}
-      <div className="fixed top-16 right-8 z-[100] flex items-center gap-3">
+      {/* Tab Dome - Atmospheric Glow focused at the top */}
+      <div 
+        className="fixed top-0 left-1/2 -translate-x-1/2 w-[180%] h-[400px] blur-[140px] opacity-[0.12] pointer-events-none transition-all duration-1000 ease-in-out z-0"
+        style={{ 
+          background: `radial-gradient(circle, ${getDomeColor()} 0%, transparent 70%)`,
+          transform: `translateX(-50%) translateY(-50%)`
+        }}
+      />
+
+      {/* Global Actions */}
+      <div className="fixed top-16 right-8 z-[100] flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-700">
         <button 
           onClick={() => setShowProfile(true)}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-all bg-white/5 border border-white/5 active:scale-90 shadow-xl backdrop-blur-md"
+          className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-all bg-white/5 border border-white/10 active:scale-90 shadow-xl backdrop-blur-md"
         >
           <UserIcon size={18} strokeWidth={1.5} />
         </button>
@@ -91,7 +108,7 @@ const App: React.FC = () => {
         {showPlusButton && (
           <button 
             onClick={() => setIsActionActive(true)}
-            className="w-10 h-10 rounded-full flex items-center justify-center text-orange-500 hover:text-orange-400 transition-all bg-white/5 border border-white/5 active:scale-90 shadow-xl backdrop-blur-md"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-orange-500 hover:text-orange-400 transition-all bg-white/10 border border-white/10 active:scale-90 shadow-xl backdrop-blur-md"
           >
             <Plus size={18} strokeWidth={2.5} />
           </button>
@@ -113,30 +130,31 @@ const App: React.FC = () => {
         <Profile onClose={() => setShowProfile(false)} />
       )}
 
-      <div className="w-full px-5 safe-bottom z-[1000] mb-5">
-        <nav className="mx-auto max-w-lg h-16 apple-blur rounded-[2.5rem] border border-white/10 px-2 flex justify-around items-center shadow-[0_25px_50px_rgba(0,0,0,0.8)]">
+      {/* Modern Navigation Bar inspired by promo */}
+      <div className="w-full px-5 safe-bottom z-[1000] mb-8">
+        <nav className="mx-auto max-w-lg h-24 apple-blur rounded-[3.5rem] border border-white/5 px-4 flex justify-around items-center shadow-[0_40px_80px_rgba(0,0,0,1)] transition-all duration-500">
           <TabButton 
             active={activeTab === 'clock'} 
             onClick={() => handleTabChange('clock')} 
-            icon={<ClockIcon size={18} strokeWidth={1.5} />} 
+            icon={<ClockIcon size={26} strokeWidth={1.5} />} 
             label="World" 
           />
           <TabButton 
             active={activeTab === 'alarm'} 
             onClick={() => handleTabChange('alarm')} 
-            icon={<AlarmClock size={18} strokeWidth={1.5} />} 
+            icon={<AlarmClock size={26} strokeWidth={1.5} />} 
             label="Alarm" 
           />
           <TabButton 
             active={activeTab === 'stopwatch'} 
             onClick={() => handleTabChange('stopwatch')} 
-            icon={<StopwatchIcon size={18} strokeWidth={1.5} />} 
+            icon={<StopwatchIcon size={26} strokeWidth={1.5} />} 
             label="Stop" 
           />
           <TabButton 
             active={activeTab === 'timer'} 
             onClick={() => handleTabChange('timer')} 
-            icon={<TimerIcon size={18} strokeWidth={1.5} />} 
+            icon={<TimerIcon size={26} strokeWidth={1.5} />} 
             label="Focus" 
           />
         </nav>
@@ -155,19 +173,16 @@ interface TabButtonProps {
 const TabButton: React.FC<TabButtonProps> = ({ active, onClick, icon, label }) => (
   <button 
     onClick={onClick}
-    className={`flex flex-col items-center justify-center space-y-1 flex-1 h-full transition-all duration-300 active:scale-90 ${
-      active ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'
+    className={`flex flex-col items-center justify-center space-y-2 flex-1 h-full transition-all duration-500 active:scale-95 relative ${
+      active ? 'text-white' : 'text-zinc-600 hover:text-zinc-400'
     }`}
   >
-    <div className={`relative flex items-center justify-center p-2 rounded-xl transition-all duration-500 ${
-      active ? 'bg-white/10 shadow-[0_0_20px_rgba(255,255,255,0.03)]' : 'bg-transparent'
+    <div className={`flex items-center justify-center w-14 h-14 rounded-2xl transition-all duration-500 ${
+      active ? 'bg-white/10 shadow-inner' : 'bg-transparent'
     }`}>
       {icon}
-      {active && (
-        <div className="absolute -bottom-1.5 w-1 h-1 bg-white rounded-full shadow-[0_0_10px_white]" />
-      )}
     </div>
-    <span className={`text-[8px] font-black tracking-[0.15em] transition-all duration-300 uppercase ${active ? 'opacity-100' : 'opacity-40'}`}>
+    <span className={`text-[10px] font-black tracking-[0.2em] transition-all duration-500 uppercase ${active ? 'opacity-100' : 'opacity-20'}`}>
       {label}
     </span>
   </button>
