@@ -4,6 +4,8 @@ import { Play, Pause, RotateCcw, Plus } from 'lucide-react';
 import { FOCUS_THEMES, PRESETS } from '../constants';
 import ThemeAnimator from './ThemeAnimator';
 
+const ZEN_BOWL_URL = 'https://cdn.freesound.org/previews/320/320655_5260872-lq.mp3';
+
 const ThemeBackgroundFX: React.FC<{ themeId: string; isActive: boolean }> = ({ themeId, isActive }) => {
   const [particles] = useState(() => [...Array(20)].map(() => ({
     id: Math.random(),
@@ -114,10 +116,15 @@ const Timer: React.FC = () => {
   const touchStart = useRef<number | null>(null);
   const touchEnd = useRef<number | null>(null);
   const minSwipeDistance = 50;
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const currentTheme = FOCUS_THEMES[themeIndex];
 
   useEffect(() => {
+    // Initialize audio object
+    audioRef.current = new Audio(ZEN_BOWL_URL);
+    audioRef.current.volume = 0.5;
+
     const savedState = localStorage.getItem('focus_timer_state');
     if (savedState) {
       try {
@@ -153,6 +160,10 @@ const Timer: React.FC = () => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             setIsActive(false);
+            if (audioRef.current) {
+              audioRef.current.currentTime = 0;
+              audioRef.current.play().catch(e => console.error("Audio play failed:", e));
+            }
             if (window.navigator.vibrate) window.navigator.vibrate([500, 100, 500]);
             return 0;
           }
