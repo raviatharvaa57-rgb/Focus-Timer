@@ -1,5 +1,5 @@
+
 import React, { useState, useEffect } from 'react';
-import firebase from 'firebase/compat/app';
 import { auth } from '../firebase';
 import { Loader2, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight, Mail, Key } from 'lucide-react';
 
@@ -11,7 +11,6 @@ const Auth: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [shake, setShake] = useState(false);
@@ -94,22 +93,6 @@ const Auth: React.FC = () => {
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    setError(null);
-    try {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      await auth.signInWithPopup(provider);
-      if (window.navigator.vibrate) window.navigator.vibrate(20);
-    } catch (err: any) {
-      setShake(true);
-      console.error("Google Auth error:", err);
-      setError("Google sign in failed");
-    } finally {
-      setGoogleLoading(false);
     }
   };
 
@@ -247,31 +230,6 @@ const Auth: React.FC = () => {
             {loading ? <Loader2 className="animate-spin" size={20} /> : (isResetting ? "Get Reset Link" : (isLogin ? "Sign In" : "Sign Up"))}
           </button>
         </form>
-
-        {!isResetting && (
-          <div className="mt-6">
-            <div className="relative flex items-center py-5">
-              <div className="flex-grow border-t border-white/5"></div>
-              <span className="flex-shrink mx-4 text-[8px] font-black text-zinc-700 uppercase tracking-widest">or</span>
-              <div className="flex-grow border-t border-white/5"></div>
-            </div>
-
-            <button
-              onClick={handleGoogleSignIn}
-              disabled={googleLoading}
-              className="w-full bg-white/5 border border-white/10 rounded-[1.75rem] py-4 px-6 text-[10px] font-black uppercase tracking-widest text-white active:scale-95 transition-all flex items-center justify-center gap-3 shadow-xl hover:bg-white/[0.08]"
-            >
-              {googleLoading ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <>
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" className="w-4 h-4" alt="Google" />
-                  Continue with Google
-                </>
-              )}
-            </button>
-          </div>
-        )}
 
         <div className="mt-10 text-center space-y-4">
           {isResetting ? (

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Plus, X, Globe, MapPin, Sparkles, Loader2 } from 'lucide-react';
 import { CLOCK_THEMES } from '../constants';
@@ -145,11 +146,12 @@ const Clock: React.FC = () => {
         <h1 className="text-4xl font-bold tracking-tight text-white">World</h1>
       </header>
 
+      {/* Floating Plus Button - Slightly down */}
       <button 
         onClick={() => setIsAdding(true)}
-        className="fixed bottom-32 right-8 w-14 h-14 rounded-full bg-white/10 flex items-center justify-center text-orange-500 active:scale-90 transition-all border border-white/20 apple-blur shadow-[0_15px_30px_rgba(0,0,0,0.5)] z-[100]"
+        className="fixed bottom-28 right-8 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center text-orange-500 active:scale-90 transition-all border border-white/20 apple-blur shadow-[0_15px_30px_rgba(0,0,0,0.5)] z-[100]"
       >
-        <Plus size={26} strokeWidth={2} />
+        <Plus size={20} strokeWidth={2} />
       </button>
 
       <div className="relative w-64 h-64 md:w-72 md:h-72 flex items-center justify-center mb-10 shrink-0">

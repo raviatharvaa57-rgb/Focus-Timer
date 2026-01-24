@@ -266,13 +266,13 @@ const Timer: React.FC = () => {
         </div>
       </header>
 
-      {/* Floating Plus Button */}
+      {/* Floating Plus Button - Slightly down */}
       <button 
         onClick={() => setIsCustomizing(true)}
-        className="fixed bottom-32 right-8 w-14 h-14 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/20 bg-white/5 apple-blur shadow-[0_15px_30px_rgba(0,0,0,0.5)] z-[100]"
+        className="fixed bottom-28 right-8 w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/20 bg-white/5 apple-blur shadow-[0_15px_30px_rgba(0,0,0,0.5)] z-[100]"
         style={{ color: currentTheme.color }}
       >
-        <Plus size={26} strokeWidth={2.5} />
+        <Plus size={20} strokeWidth={2.5} />
       </button>
 
       <div className="w-full flex-1 flex flex-col items-center justify-center relative -translate-y-12 z-10 px-6">

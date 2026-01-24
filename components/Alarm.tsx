@@ -133,12 +133,12 @@ const Alarm: React.FC = () => {
         <h1 className="text-3xl font-bold tracking-tight">Alarm</h1>
       </header>
 
-      {/* Floating Plus Button - Moved Down */}
+      {/* Floating Plus Button - Moved slightly down */}
       <button 
         onClick={() => { setIsAdding(true); setSelectedSoundId('minimal'); }}
-        className="fixed bottom-32 right-8 w-14 h-14 rounded-full bg-white/10 flex items-center justify-center text-orange-500 active:scale-90 transition-all border border-white/20 apple-blur shadow-[0_15px_30px_rgba(0,0,0,0.5)] z-[100]"
+        className="fixed bottom-28 right-8 w-11 h-11 rounded-full bg-white/10 flex items-center justify-center text-orange-500 active:scale-90 transition-all border border-white/20 apple-blur shadow-[0_15px_30px_rgba(0,0,0,0.5)] z-[100]"
       >
-        <Plus size={28} />
+        <Plus size={22} />
       </button>
 
       <div className="flex-1 overflow-y-auto hide-scrollbar space-y-4 pb-48">
