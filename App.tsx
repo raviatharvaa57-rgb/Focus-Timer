@@ -4,7 +4,7 @@ import {
   Hourglass as TimerIcon, 
   AlarmClock, 
   Timer as StopwatchIcon, 
-  Globe as ClockIcon 
+  Globe as ClockIcon
 } from 'lucide-react';
 import { AppTab } from './types';
 import Timer from './components/Timer';
@@ -19,7 +19,7 @@ const App: React.FC = () => {
     if (activeTab === tab) return;
     setActiveTab(tab);
     if (window.navigator.vibrate) {
-      window.navigator.vibrate(5);
+      window.navigator.vibrate(10);
     }
   }, [activeTab]);
 
@@ -34,18 +34,18 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-black overflow-hidden select-none text-white">
-      {/* Visual Overlay Layer */}
-      <div className="fixed inset-0 pointer-events-none z-[60] bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)]" />
+    <div className="fixed inset-0 flex flex-col bg-black overflow-hidden select-none text-white transition-opacity duration-700">
+      {/* Background Ambience */}
+      <div className="fixed inset-0 pointer-events-none z-[60] bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
       
-      {/* Main Content */}
+      {/* Feature Views */}
       <main className="flex-1 relative overflow-hidden">
         {renderContent()}
       </main>
 
-      {/* Tab Bar Container - Moved lower with mb-2 and shorter height h-16 */}
-      <div className="w-full px-5 safe-bottom z-[1000] mb-2">
-        <nav className="mx-auto max-w-lg h-16 apple-blur rounded-[2rem] border border-white/10 px-2 flex justify-around items-center shadow-[0_15px_40px_rgba(0,0,0,0.8)]">
+      {/* Navigation Tab Bar */}
+      <div className="w-full px-5 safe-bottom z-[1000] mb-5">
+        <nav className="mx-auto max-w-lg h-16 apple-blur rounded-[2.5rem] border border-white/10 px-2 flex justify-around items-center shadow-[0_25px_50px_rgba(0,0,0,0.8)]">
           <TabButton 
             active={activeTab === 'clock'} 
             onClick={() => handleTabChange('clock')} 
@@ -87,18 +87,18 @@ const TabButton: React.FC<TabButtonProps> = ({ active, onClick, icon, label }) =
   <button 
     onClick={onClick}
     className={`flex flex-col items-center justify-center space-y-1 flex-1 h-full transition-all duration-300 active:scale-90 ${
-      active ? 'text-white' : 'text-zinc-500'
+      active ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'
     }`}
   >
-    <div className={`relative flex items-center justify-center p-2 rounded-xl transition-all duration-300 ${
-      active ? 'bg-white/10' : 'bg-transparent'
+    <div className={`relative flex items-center justify-center p-2 rounded-xl transition-all duration-500 ${
+      active ? 'bg-white/10 shadow-[0_0_20px_rgba(255,255,255,0.03)]' : 'bg-transparent'
     }`}>
       {icon}
       {active && (
-        <div className="absolute -bottom-1 w-1 h-1 bg-white rounded-full shadow-[0_0_8px_white]" />
+        <div className="absolute -bottom-1.5 w-1 h-1 bg-white rounded-full shadow-[0_0_10px_white]" />
       )}
     </div>
-    <span className={`text-[8px] font-bold tracking-[0.12em] transition-all duration-300 uppercase ${active ? 'opacity-100' : 'opacity-40'}`}>
+    <span className={`text-[8px] font-black tracking-[0.15em] transition-all duration-300 uppercase ${active ? 'opacity-100' : 'opacity-40'}`}>
       {label}
     </span>
   </button>

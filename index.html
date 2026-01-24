@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -62,7 +61,6 @@
         .safe-top { padding-top: var(--sat); }
         .safe-bottom { padding-bottom: var(--sab); }
         
-        /* Prevent selection and tap highlight */
         * {
             -webkit-tap-highlight-color: transparent;
             user-select: none;
@@ -71,6 +69,10 @@
         input, textarea {
             user-select: text;
             -webkit-user-select: text;
+        }
+        
+        input:focus {
+            outline: none;
         }
     </style>
 <script type="importmap">

@@ -112,16 +112,16 @@ const Timer: React.FC = () => {
   const [themeIndex, setThemeIndex] = useState(0);
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [customMins, setCustomMins] = useState(25);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   
   const touchStart = useRef<number | null>(null);
-  const touchEnd = useRef<number | null>(null);
-  const minSwipeDistance = 50;
+  const minSwipeDistance = 60;
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const currentTheme = FOCUS_THEMES[themeIndex];
 
   useEffect(() => {
-    // Initialize audio object
     audioRef.current = new Audio(ZEN_BOWL_URL);
     audioRef.current.volume = 0.5;
 
@@ -175,31 +175,43 @@ const Timer: React.FC = () => {
   }, [isActive, timeLeft, themeIndex, totalTime]);
 
   const nextTheme = useCallback(() => {
+    setSlideDirection('right');
     setThemeIndex((prev) => (prev + 1) % FOCUS_THEMES.length);
-    if (window.navigator.vibrate) window.navigator.vibrate(5);
+    if (window.navigator.vibrate) window.navigator.vibrate(10);
+    setTimeout(() => setSlideDirection(null), 500);
   }, []);
 
   const prevTheme = useCallback(() => {
+    setSlideDirection('left');
     setThemeIndex((prev) => (prev - 1 + FOCUS_THEMES.length) % FOCUS_THEMES.length);
-    if (window.navigator.vibrate) window.navigator.vibrate(5);
+    if (window.navigator.vibrate) window.navigator.vibrate(10);
+    setTimeout(() => setSlideDirection(null), 500);
   }, []);
 
   const onTouchStart = (e: React.TouchEvent) => {
-    touchEnd.current = null;
     touchStart.current = e.targetTouches[0].clientX;
+    setSwipeOffset(0);
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
-    touchEnd.current = e.targetTouches[0].clientX;
+    if (touchStart.current !== null) {
+      const currentTouch = e.targetTouches[0].clientX;
+      const diff = currentTouch - touchStart.current;
+      // Dampen the movement as it gets further
+      setSwipeOffset(diff * 0.4);
+    }
   };
 
   const onTouchEnd = () => {
-    if (!touchStart.current || !touchEnd.current) return;
-    const distance = touchStart.current - touchEnd.current;
-    if (Math.abs(distance) > minSwipeDistance) {
-      if (distance > 0) nextTheme();
+    if (touchStart.current === null) return;
+    
+    if (Math.abs(swipeOffset) > minSwipeDistance / 2) {
+      if (swipeOffset < 0) nextTheme();
       else prevTheme();
     }
+    
+    setSwipeOffset(0);
+    touchStart.current = null;
   };
 
   const formatTime = (seconds: number) => {
@@ -210,7 +222,7 @@ const Timer: React.FC = () => {
 
   const toggleTimer = () => {
     setIsActive(!isActive);
-    if (window.navigator.vibrate) window.navigator.vibrate(10);
+    if (window.navigator.vibrate) window.navigator.vibrate(15);
   };
 
   const resetTimer = () => {
@@ -239,28 +251,49 @@ const Timer: React.FC = () => {
     >
       <ThemeBackgroundFX themeId={currentTheme.id} isActive={isActive} />
 
-      <header className="w-full flex justify-between items-center pt-16 pb-2 px-8 z-50">
+      <header className="w-full flex justify-between items-center pt-16 pb-2 px-8 z-50 relative">
         <div className="flex flex-col">
           <h1 className="text-xl font-bold tracking-tight text-white opacity-90">Focus</h1>
-          <p className="text-[8px] uppercase tracking-[0.4em] opacity-40 font-black mt-0.5" style={{ color: currentTheme.color }}>{currentTheme.name}</p>
+          <div className="overflow-hidden">
+            <p 
+              key={currentTheme.id}
+              className="text-[8px] uppercase tracking-[0.4em] opacity-40 font-black mt-0.5 animate-in slide-in-from-bottom-1 duration-500" 
+              style={{ color: currentTheme.color }}
+            >
+              {currentTheme.name}
+            </p>
+          </div>
         </div>
-        <button 
-          onClick={() => setIsCustomizing(true)}
-          className="w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/10 apple-blur shadow-2xl"
-          style={{ color: currentTheme.color }}
-        >
-          <Plus size={20} strokeWidth={2.5} />
-        </button>
       </header>
 
+      {/* Floating Plus Button */}
+      <button 
+        onClick={() => setIsCustomizing(true)}
+        className="fixed bottom-32 right-8 w-14 h-14 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/20 bg-white/5 apple-blur shadow-[0_15px_30px_rgba(0,0,0,0.5)] z-[100]"
+        style={{ color: currentTheme.color }}
+      >
+        <Plus size={26} strokeWidth={2.5} />
+      </button>
+
       <div className="w-full flex-1 flex flex-col items-center justify-center relative -translate-y-12 z-10 px-6">
-        <div className="relative flex items-center justify-center mb-10 group cursor-pointer" onClick={nextTheme}>
+        {/* Swippable Centerpiece */}
+        <div 
+          className="relative flex items-center justify-center mb-10 group cursor-pointer transition-transform duration-150 ease-out"
+          style={{ transform: `translateX(${swipeOffset}px) scale(${1 - Math.abs(swipeOffset) / 1000})` }}
+          onClick={nextTheme}
+        >
           <svg className="absolute w-[240px] h-[240px] -rotate-90 pointer-events-none overflow-visible">
             <circle cx="120" cy="120" r="90" fill="transparent" stroke="rgba(255,255,255,0.03)" strokeWidth="3" />
             <circle cx="120" cy="120" r="90" fill="transparent" stroke={currentTheme.color} strokeWidth="3" strokeDasharray="565" strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-1000 ease-linear" style={{ filter: `drop-shadow(0 0 10px ${currentTheme.color}88)` }} />
           </svg>
 
-          <div className={`transition-all duration-1000 ${isActive ? 'scale-110' : 'scale-100'} active:scale-95`}>
+          <div 
+            key={themeIndex}
+            className={`transition-all duration-1000 ${isActive ? 'scale-110' : 'scale-100'} active:scale-95 ${
+              slideDirection === 'right' ? 'animate-in slide-in-from-right-12 duration-500' : 
+              slideDirection === 'left' ? 'animate-in slide-in-from-left-12 duration-500' : ''
+            }`}
+          >
             <div className="scale-[0.85]">
               <ThemeAnimator themeId={currentTheme.id} />
             </div>

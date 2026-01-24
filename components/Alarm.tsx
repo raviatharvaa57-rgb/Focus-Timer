@@ -129,15 +129,17 @@ const Alarm: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col bg-black px-6 overflow-hidden">
-      <header className="flex justify-between items-center pt-16 pb-6 shrink-0">
+      <header className="flex justify-between items-center pt-16 pb-6 shrink-0 relative">
         <h1 className="text-3xl font-bold tracking-tight">Alarm</h1>
-        <button 
-          onClick={() => { setIsAdding(true); setSelectedSoundId('minimal'); }}
-          className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-orange-500 active:scale-90 transition-all border border-white/5"
-        >
-          <Plus size={24} />
-        </button>
       </header>
+
+      {/* Floating Plus Button - Moved Down */}
+      <button 
+        onClick={() => { setIsAdding(true); setSelectedSoundId('minimal'); }}
+        className="fixed bottom-32 right-8 w-14 h-14 rounded-full bg-white/10 flex items-center justify-center text-orange-500 active:scale-90 transition-all border border-white/20 apple-blur shadow-[0_15px_30px_rgba(0,0,0,0.5)] z-[100]"
+      >
+        <Plus size={28} />
+      </button>
 
       <div className="flex-1 overflow-y-auto hide-scrollbar space-y-4 pb-48">
         {alarms.map((alarm) => {
