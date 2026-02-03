@@ -27,6 +27,8 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showProfile, setShowProfile] = useState(false);
   const [isActionActive, setIsActionActive] = useState(false);
+  const [isImmersiveLandscape, setIsImmersiveLandscape] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
@@ -37,7 +39,34 @@ const App: React.FC = () => {
       }
       setLoading(false);
     });
-    return () => unsubscribe();
+
+    const checkDeviceAndOrientation = () => {
+      const ua = navigator.userAgent;
+      const isMobileUA = /iPhone|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+      const isTabletUA = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk|(puffin(?!.*(IP|AP|WP))))/i.test(ua);
+      const isIPad = (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) || ua.includes('iPad');
+      const smallSide = Math.min(window.innerWidth, window.innerHeight);
+      const isPhoneSized = smallSide < 500;
+
+      const isPhone = isMobileUA && !isTabletUA && !isIPad && isPhoneSized;
+      const isLandscape = window.innerWidth > window.innerHeight;
+
+      // Detect if it's a desktop device (PC/Laptop)
+      const isActuallyDesktop = !isMobileUA && !isTabletUA && !isIPad;
+
+      setIsImmersiveLandscape(isLandscape && isPhone);
+      setIsDesktop(isActuallyDesktop);
+    };
+
+    window.addEventListener('resize', checkDeviceAndOrientation);
+    window.addEventListener('orientationchange', checkDeviceAndOrientation);
+    checkDeviceAndOrientation();
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('resize', checkDeviceAndOrientation);
+      window.removeEventListener('orientationchange', checkDeviceAndOrientation);
+    };
   }, []);
 
   const handleTabChange = useCallback((tab: AppTab) => {
@@ -60,9 +89,9 @@ const App: React.FC = () => {
 
   const getDomeColor = () => {
     if (activeTab === 'timer') return FOCUS_THEMES[0].color;
-    if (activeTab === 'alarm') return '#f97316'; // Vivid Orange for Alarm
-    if (activeTab === 'clock') return '#3b82f6'; // Deep Blue for World Clock
-    if (activeTab === 'stopwatch') return '#ffffff'; // White for Stopwatch
+    if (activeTab === 'alarm') return '#f97316';
+    if (activeTab === 'clock') return '#3b82f6';
+    if (activeTab === 'stopwatch') return '#ffffff';
     return '#ffffff';
   };
 
@@ -92,37 +121,39 @@ const App: React.FC = () => {
         className="fixed top-0 left-1/2 -translate-x-1/2 w-[180%] h-[400px] blur-[140px] opacity-[0.12] pointer-events-none transition-all duration-1000 ease-in-out z-0"
         style={{ 
           background: `radial-gradient(circle, ${getDomeColor()} 0%, transparent 70%)`,
-          transform: `translateX(-50%) translateY(-50%)`
+          transform: `translateX(-50%) ${isImmersiveLandscape ? 'translateY(-100%)' : 'translateY(-50%)'}`
         }}
       />
 
-      {/* Global Actions */}
-      <div className="fixed top-16 right-8 z-[100] flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-700">
-        <button 
-          onClick={() => setShowProfile(true)}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-all bg-white/5 border border-white/10 active:scale-90 shadow-xl backdrop-blur-md"
-        >
-          <UserIcon size={18} strokeWidth={1.5} />
-        </button>
-
-        {showPlusButton && (
+      {/* Global Actions - Hidden in Mobile Landscape */}
+      {!isImmersiveLandscape && (
+        <div className={`fixed z-[100] flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-700 ${isDesktop ? 'top-8 right-8' : 'top-16 right-8'}`}>
           <button 
-            onClick={() => setIsActionActive(true)}
-            className="w-10 h-10 rounded-full flex items-center justify-center text-orange-500 hover:text-orange-400 transition-all bg-white/10 border border-white/10 active:scale-90 shadow-xl backdrop-blur-md"
+            onClick={() => setShowProfile(true)}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-all bg-white/5 border border-white/10 active:scale-90 shadow-xl backdrop-blur-md"
           >
-            <Plus size={18} strokeWidth={2.5} />
+            <UserIcon size={18} strokeWidth={1.5} />
           </button>
-        )}
 
-        <button 
-          onClick={handleSignOut}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-600 hover:text-white transition-all bg-white/5 border border-white/5 active:scale-90 shadow-xl backdrop-blur-md"
-        >
-          <LogOut size={16} />
-        </button>
-      </div>
+          {showPlusButton && (
+            <button 
+              onClick={() => setIsActionActive(true)}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-orange-500 hover:text-orange-400 transition-all bg-white/10 border border-white/10 active:scale-90 shadow-xl backdrop-blur-md"
+            >
+              <Plus size={18} strokeWidth={2.5} />
+            </button>
+          )}
 
-      <main className="flex-1 relative overflow-hidden">
+          <button 
+            onClick={handleSignOut}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-600 hover:text-white transition-all bg-white/5 border border-white/5 active:scale-90 shadow-xl backdrop-blur-md"
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
+      )}
+
+      <main className={`flex-1 relative overflow-hidden transition-all duration-700 ${isImmersiveLandscape ? 'scale-110' : 'scale-100'}`}>
         {renderContent()}
       </main>
 
@@ -130,35 +161,37 @@ const App: React.FC = () => {
         <Profile onClose={() => setShowProfile(false)} />
       )}
 
-      {/* Modern Navigation Bar inspired by promo */}
-      <div className="w-full px-5 safe-bottom z-[1000] mb-8">
-        <nav className="mx-auto max-w-lg h-24 apple-blur rounded-[3.5rem] border border-white/5 px-4 flex justify-around items-center shadow-[0_40px_80px_rgba(0,0,0,1)] transition-all duration-500">
-          <TabButton 
-            active={activeTab === 'clock'} 
-            onClick={() => handleTabChange('clock')} 
-            icon={<ClockIcon size={26} strokeWidth={1.5} />} 
-            label="World" 
-          />
-          <TabButton 
-            active={activeTab === 'alarm'} 
-            onClick={() => handleTabChange('alarm')} 
-            icon={<AlarmClock size={26} strokeWidth={1.5} />} 
-            label="Alarm" 
-          />
-          <TabButton 
-            active={activeTab === 'stopwatch'} 
-            onClick={() => handleTabChange('stopwatch')} 
-            icon={<StopwatchIcon size={26} strokeWidth={1.5} />} 
-            label="Stop" 
-          />
-          <TabButton 
-            active={activeTab === 'timer'} 
-            onClick={() => handleTabChange('timer')} 
-            icon={<TimerIcon size={26} strokeWidth={1.5} />} 
-            label="Focus" 
-          />
-        </nav>
-      </div>
+      {/* Modern Navigation Bar */}
+      {!isImmersiveLandscape && (
+        <div className={`w-full px-5 safe-bottom z-[1000] animate-in slide-in-from-bottom-10 duration-500 ${isDesktop ? 'mb-2' : 'mb-8'}`}>
+          <nav className="mx-auto max-w-lg h-24 apple-blur rounded-[3.5rem] border border-white/5 px-4 flex justify-around items-center shadow-[0_40px_80px_rgba(0,0,0,1)] transition-all duration-500">
+            <TabButton 
+              active={activeTab === 'clock'} 
+              onClick={() => handleTabChange('clock')} 
+              icon={<ClockIcon size={26} strokeWidth={1.5} />} 
+              label="WORLD" 
+            />
+            <TabButton 
+              active={activeTab === 'alarm'} 
+              onClick={() => handleTabChange('alarm')} 
+              icon={<AlarmClock size={26} strokeWidth={1.5} />} 
+              label="ALARM" 
+            />
+            <TabButton 
+              active={activeTab === 'stopwatch'} 
+              onClick={() => handleTabChange('stopwatch')} 
+              icon={<StopwatchIcon size={26} strokeWidth={1.5} />} 
+              label="STOP" 
+            />
+            <TabButton 
+              active={activeTab === 'timer'} 
+              onClick={() => handleTabChange('timer')} 
+              icon={<TimerIcon size={26} strokeWidth={1.5} />} 
+              label="FOCUS" 
+            />
+          </nav>
+        </div>
+      )}
     </div>
   );
 };

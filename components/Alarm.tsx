@@ -1,12 +1,13 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Trash2, ChevronUp, ChevronDown, Loader2, Pencil } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Trash2, ChevronUp, ChevronDown, Loader2, Pencil, X, Bell, BellRing } from 'lucide-react';
 import { AlarmItem } from '../types';
 import { db } from '../firebase';
 import firebase from 'firebase/compat/app';
 
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const FULL_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const ZEN_BOWL_URL = 'https://www.orangefreesounds.com/wp-content/uploads/2020/02/Morning-alarm-ringtone.mp3';
 
 interface AlarmProps {
   user: firebase.User;
@@ -19,14 +20,21 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
   const [loading, setLoading] = useState(true);
   const [newLabel, setNewLabel] = useState('');
   const [selectedDays, setSelectedDays] = useState<string[]>(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
-  const [selectedSoundId, setSelectedSoundId] = useState('minimal');
   
   const [pickerHour, setPickerHour] = useState(7);
   const [pickerMinute, setPickerMinute] = useState(0);
   const [pickerPeriod, setPickerPeriod] = useState<'AM' | 'PM'>('AM');
   const [editingAlarm, setEditingAlarm] = useState<AlarmItem | null>(null);
+  
+  // Firing state
+  const [firingAlarm, setFiringAlarm] = useState<AlarmItem | null>(null);
+  const lastTriggeredRef = useRef<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    audioRef.current = new Audio(ZEN_BOWL_URL);
+    audioRef.current.volume = 0.6;
+
     const unsubscribe = db.collection('users')
       .doc(user.uid)
       .collection('alarms')
@@ -45,6 +53,53 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
 
     return () => unsubscribe();
   }, [user.uid]);
+
+  const playAlarmSound = useCallback(() => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = 0;
+    audioRef.current.play().catch(e => console.error("Audio play failed:", e));
+  }, []);
+
+  // Time check effect to trigger alarm
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      const currentH = now.getHours().toString().padStart(2, '0');
+      const currentM = now.getMinutes().toString().padStart(2, '0');
+      const currentTimeStr = `${currentH}:${currentM}`;
+      const currentDay = now.toLocaleDateString('en-US', { weekday: 'short' }); // e.g. "Mon"
+
+      if (lastTriggeredRef.current === currentTimeStr) return;
+
+      const matchedAlarm = alarms.find(alarm => {
+        if (!alarm.active) return false;
+        if (alarm.time !== currentTimeStr) return false;
+
+        // Recurrence logic
+        if (alarm.days.includes('Every day')) return true;
+        if (alarm.days.includes('Once')) return true;
+        if (alarm.days.includes(currentDay)) return true;
+        
+        return false;
+      });
+
+      if (matchedAlarm) {
+        setFiringAlarm(matchedAlarm);
+        playAlarmSound();
+        lastTriggeredRef.current = currentTimeStr;
+        if (window.navigator.vibrate) window.navigator.vibrate([500, 200, 500, 200, 500]);
+        
+        // If it was a "Once" alarm, deactivate it
+        if (matchedAlarm.days.includes('Once')) {
+          db.collection('users').doc(user.uid).collection('alarms').doc(matchedAlarm.id).update({
+            active: false
+          });
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [alarms, user.uid, playAlarmSound]);
 
   const toggleAlarm = async (id: string, currentStatus: boolean) => {
     try {
@@ -80,7 +135,6 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
     
     const days = alarm.days.includes('Every day') ? FULL_DAYS : alarm.days.includes('Once') ? [] : alarm.days;
     setSelectedDays(days);
-    setSelectedSoundId(alarm.sound || 'minimal');
     
     if (window.navigator.vibrate) window.navigator.vibrate(15);
   };
@@ -109,7 +163,7 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
       label: newLabel || 'Wake up',
       active: true,
       days: selectedDays.length === 7 ? ['Every day'] : selectedDays.length === 0 ? ['Once'] : selectedDays,
-      sound: selectedSoundId,
+      sound: 'zen_bowl', 
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
@@ -218,10 +272,10 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
                         <div className={`w-6 h-6 bg-white rounded-full shadow-lg transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${alarm.active ? 'translate-x-6' : 'translate-x-0'}`} />
                       </button>
                       <div className="flex justify-around items-center pt-1">
-                        <button onClick={() => startEditing(alarm)} className="text-white/10 hover:text-white transition-colors p-1 active:scale-90">
+                        <button onClick={() => startEditing(alarm)} className="text-[#A52A2A] hover:brightness-125 transition-all p-1 active:scale-90">
                           <Pencil size={14} strokeWidth={2} />
                         </button>
-                        <button onClick={() => removeAlarm(alarm.id)} className="text-white/5 hover:text-red-500 transition-colors p-1 active:scale-90">
+                        <button onClick={() => removeAlarm(alarm.id)} className="text-[#A52A2A] hover:brightness-125 transition-all p-1 active:scale-90">
                           <Trash2 size={14} strokeWidth={2} />
                         </button>
                       </div>
@@ -297,6 +351,46 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* FIRING ALARM OVERLAY */}
+      {firingAlarm && (
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center p-8 animate-in fade-in duration-500 overflow-hidden">
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-3xl" />
+          
+          {/* Pulsing Atmosphere */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-orange-500/10 rounded-full blur-[120px] animate-pulse" />
+          </div>
+
+          <div className="relative z-10 text-center animate-in zoom-in-95 slide-in-from-bottom-12 duration-700">
+             <div className="w-32 h-32 rounded-[3.5rem] bg-orange-500/20 border border-orange-500/30 flex items-center justify-center mx-auto mb-10 shadow-[0_0_80px_rgba(249,115,22,0.2)] animate-bounce">
+                <BellRing size={48} className="text-orange-500" />
+             </div>
+             
+             <h2 className="text-6xl font-extralight tracking-tighter tabular-nums mb-4 text-white">
+               {formatDisplayTime(firingAlarm.time).h12}:{formatDisplayTime(firingAlarm.time).m}
+             </h2>
+             
+             <p className="text-[12px] uppercase tracking-[0.5em] text-orange-500 font-black mb-16 animate-pulse">
+               {firingAlarm.label || 'Alarm'}
+             </p>
+             
+             <button 
+               onClick={() => {
+                 setFiringAlarm(null);
+                 if (audioRef.current) {
+                   audioRef.current.pause();
+                   audioRef.current.currentTime = 0;
+                 }
+               }}
+               className="group relative px-16 py-6 rounded-[2.5rem] bg-white text-black font-black uppercase tracking-[0.3em] text-[11px] shadow-[0_0_40px_rgba(255,255,255,0.2)] active:scale-95 transition-all overflow-hidden"
+             >
+               <span className="relative z-10">Stop Alarm</span>
+               <div className="absolute inset-0 bg-zinc-100 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+             </button>
           </div>
         </div>
       )}

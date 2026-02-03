@@ -144,8 +144,9 @@ const Auth: React.FC = () => {
         <div className="w-full max-w-sm apple-blur rounded-[3rem] p-10 border border-white/10 text-center animate-in fade-in zoom-in-95">
           <Mail size={40} className="text-white mx-auto mb-8 animate-pulse" />
           <h2 className="text-3xl font-bold text-white mb-4">Check your email</h2>
-          <p className="text-zinc-400 text-sm mb-8">Verification sent to <span className="text-white font-semibold">{verificationEmail}</span>.</p>
-          <button onClick={returnToLogin} className="w-full bg-white text-black rounded-[1.75rem] py-5 px-6 text-[10px] font-black uppercase tracking-widest">Go to Login</button>
+          <p className="text-zinc-400 text-sm mb-2">Verification sent to <span className="text-white font-semibold">{verificationEmail}</span>.</p>
+          <p className="text-orange-500/60 text-[10px] font-black uppercase tracking-widest mb-8">Can you check the spam inbox as well</p>
+          <button onClick={returnToLogin} className="w-full bg-white text-black rounded-[1.75rem] py-5 px-6 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all">Go to Login</button>
         </div>
       </div>
     );
@@ -157,8 +158,9 @@ const Auth: React.FC = () => {
         <div className="w-full max-w-sm apple-blur rounded-[3rem] p-10 border border-white/10 text-center animate-in fade-in zoom-in-95">
           <Key size={40} className="text-white mx-auto mb-8 animate-pulse" />
           <h2 className="text-3xl font-bold text-white mb-4">Reset link sent</h2>
-          <p className="text-zinc-400 text-sm mb-8">Follow instructions in your email to reset password.</p>
-          <button onClick={returnToLogin} className="w-full bg-white text-black rounded-[1.75rem] py-5 px-6 text-[10px] font-black uppercase tracking-widest">Back to Sign In</button>
+          <p className="text-zinc-400 text-sm mb-4">Follow instructions in your email to reset password.</p>
+          <p className="text-orange-500/60 text-[10px] font-black uppercase tracking-widest mb-8">Can you check the spam inbox as well</p>
+          <button onClick={returnToLogin} className="w-full bg-white text-black rounded-[1.75rem] py-5 px-6 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all">Back to Sign In</button>
         </div>
       </div>
     );

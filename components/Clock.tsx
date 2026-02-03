@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Globe, Loader2 } from 'lucide-react';
 import { CLOCK_THEMES } from '../constants';
 import { WorldLocation } from '../types';
@@ -17,9 +17,13 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
   const [themeIndex, setThemeIndex] = useState(0);
   const [locations, setLocations] = useState<WorldLocation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   
+  const touchStart = useRef<number | null>(null);
   const currentTheme = CLOCK_THEMES[themeIndex];
 
+  // Tick the clock
   useEffect(() => {
     const update = () => {
       setTime(new Date());
@@ -29,6 +33,7 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
     return () => cancelAnimationFrame(frameId);
   }, []);
 
+  // Sync Locations
   useEffect(() => {
     const unsubscribe = db.collection('users')
       .doc(user.uid)
@@ -48,6 +53,46 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
 
     return () => unsubscribe();
   }, [user.uid]);
+
+  const nextTheme = useCallback(() => {
+    setSlideDirection('right');
+    setThemeIndex((prev) => (prev + 1) % CLOCK_THEMES.length);
+    if (window.navigator.vibrate) window.navigator.vibrate(10);
+    setTimeout(() => setSlideDirection(null), 500);
+  }, []);
+
+  const prevTheme = useCallback(() => {
+    setSlideDirection('left');
+    setThemeIndex((prev) => (prev - 1 + CLOCK_THEMES.length) % CLOCK_THEMES.length);
+    if (window.navigator.vibrate) window.navigator.vibrate(10);
+    setTimeout(() => setSlideDirection(null), 500);
+  }, []);
+
+  // Gesture Handlers
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStart.current = e.targetTouches[0].clientX;
+    setSwipeOffset(0);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (touchStart.current !== null) {
+      const currentTouch = e.targetTouches[0].clientX;
+      const diff = currentTouch - touchStart.current;
+      // Add resistance to the swipe
+      setSwipeOffset(diff * 0.4);
+    }
+  };
+
+  const onTouchEnd = () => {
+    if (touchStart.current === null) return;
+    const minSwipeDistance = 50;
+    if (Math.abs(swipeOffset) > minSwipeDistance / 2) {
+      if (swipeOffset < 0) nextTheme();
+      else prevTheme();
+    }
+    setSwipeOffset(0);
+    touchStart.current = null;
+  };
 
   const formatTimeMain = (date: Date) => {
     const hours = date.getHours() % 12 || 12;
@@ -80,6 +125,7 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
     return `${diff > 0 ? '+' : '-'}${absDiff}${hourStr}`;
   };
 
+  // Clock Degrees
   const progress = time.getSeconds() / 60;
   const secondDegrees = (time.getSeconds() / 60) * 360;
   const minuteDegrees = ((time.getMinutes() + time.getSeconds() / 60) / 60) * 360;
@@ -95,12 +141,27 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
   };
 
   return (
-    <div className={`h-full flex flex-col items-center pt-8 pb-32 px-10 transition-all duration-1000 bg-gradient-to-b ${currentTheme.bgGradient} ${currentTheme.textColor} overflow-hidden`}>
+    <div 
+      className={`h-full flex flex-col items-center pt-8 pb-32 px-10 transition-all duration-1000 bg-gradient-to-b ${currentTheme.bgGradient} ${currentTheme.textColor} overflow-hidden`}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       <header className="w-full flex justify-between items-center mb-6 z-10 pt-8 px-0 relative animate-in fade-in slide-in-from-top-2">
-        <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-xl">World</h1>
+        <div className="flex flex-col">
+          <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-xl">World</h1>
+          <p className="text-[9px] uppercase tracking-[0.4em] opacity-30 font-black mt-1" style={{ color: currentTheme.dotColor.replace('bg-', 'text-') }}>{currentTheme.name}</p>
+        </div>
       </header>
 
-      <div className="relative w-64 h-64 md:w-72 md:h-72 flex items-center justify-center mb-10 shrink-0">
+      {/* Tactile Clock Face */}
+      <div 
+        className={`relative w-64 h-64 md:w-72 md:h-72 flex items-center justify-center mb-10 shrink-0 transition-transform duration-500 ease-out ${
+          slideDirection === 'right' ? 'animate-in slide-in-from-right-12' : 
+          slideDirection === 'left' ? 'animate-in slide-in-from-left-12' : ''
+        }`}
+        style={{ transform: `translateX(${swipeOffset}px)` }}
+      >
         <svg className="absolute w-full h-full -rotate-90 transform overflow-visible" viewBox="0 0 200 200">
           <circle cx="100" cy="100" r="90" className={`${currentTheme.ringColor} fill-transparent transition-all duration-700`} strokeWidth="0.5" />
           <circle 
@@ -110,8 +171,10 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
             pathLength="1" 
             className={`fill-transparent transition-all duration-300 linear ${currentTheme.accentColor}`} 
             strokeLinecap="round" 
+            style={{ filter: `drop-shadow(0 0 10px currentColor)` }}
           />
         </svg>
+
         {[...Array(12)].map((_, i) => (
           <div 
             key={i} 
@@ -119,10 +182,11 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
             style={{ transform: `rotate(${i * 30}deg) translateY(-85px)` }} 
           />
         ))}
+
         <div className="absolute inset-0 flex items-center justify-center">
           <div className={`absolute bottom-1/2 w-[2px] h-14 rounded-full origin-bottom transition-all duration-500 ${currentTheme.handColor}`} style={{ transform: `rotate(${hourDegrees}deg)` }} />
           <div className={`absolute bottom-1/2 w-[1.5px] h-20 rounded-full origin-bottom transition-all duration-500 ${currentTheme.handColor} opacity-60`} style={{ transform: `rotate(${minuteDegrees}deg)` }} />
-          <div className="absolute bottom-1/2 w-[1px] h-24 bg-orange-500 rounded-full origin-bottom shadow-sm" style={{ transform: `rotate(${secondDegrees}deg)` }} />
+          <div className={`absolute bottom-1/2 w-[1px] h-24 rounded-full origin-bottom shadow-sm transition-all duration-500 ${currentTheme.secondHandColor}`} style={{ transform: `rotate(${secondDegrees}deg)` }} />
           <div className={`absolute w-2 h-2 rounded-full z-10 transition-colors duration-500 ${currentTheme.handColor}`} />
         </div>
       </div>
@@ -135,16 +199,21 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
         <div className="mt-2 font-black tracking-[0.2em] text-[9px] uppercase opacity-30">{formatDate(time)}</div>
       </div>
 
-      <div className="flex items-center space-x-6 mb-10 px-2 shrink-0">
+      {/* Pagination Dots */}
+      <div className="flex items-center space-x-6 mb-10 px-2 shrink-0 overflow-x-auto hide-scrollbar">
         {CLOCK_THEMES.map((theme, idx) => (
           <button 
             key={theme.id} 
-            onClick={() => setThemeIndex(idx)} 
-            className={`w-2.5 h-2.5 rounded-full transition-all duration-700 transform ${themeIndex === idx ? `${theme.dotColor} scale-[1.5] ring-4 ring-white/10` : 'bg-white/10 hover:bg-white/20 scale-100'}`} 
+            onClick={() => {
+               setThemeIndex(idx);
+               if (window.navigator.vibrate) window.navigator.vibrate(10);
+            }} 
+            className={`w-2.5 h-2.5 rounded-full transition-all duration-700 transform flex-shrink-0 ${themeIndex === idx ? `${theme.dotColor} scale-[1.5] ring-4 ring-white/10 shadow-[0_0_15px_currentColor]` : 'bg-white/10 hover:bg-white/20 scale-100'}`} 
           />
         ))}
       </div>
 
+      {/* Locations List */}
       <div className="w-full flex-1 overflow-y-auto hide-scrollbar space-y-4 pb-10">
         {loading ? (
           <div className="flex justify-center py-10">
@@ -181,9 +250,6 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
                 </div>
               </div>
             ))}
-            {locations.length === 0 && (
-              <div className="text-center py-10 opacity-20 text-[10px] uppercase tracking-widest font-black">No locations set</div>
-            )}
           </>
         )}
       </div>
