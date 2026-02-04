@@ -1,72 +1,10 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, RotateCcw } from 'lucide-react';
+import { Play, Pause, RotateCcw, Plus, Minus, Settings2 } from 'lucide-react';
 import { FOCUS_THEMES, PRESETS } from '../constants';
 import ThemeAnimator from './ThemeAnimator';
 
 const ZEN_BOWL_URL = 'https://cdn.freesound.org/previews/320/320655_5260872-lq.mp3';
-
-const ThemeBackgroundFX: React.FC<{ themeId: string; isActive: boolean }> = ({ themeId, isActive }) => {
-  const [particles] = useState(() => [...Array(25)].map(() => ({
-    id: Math.random(),
-    left: Math.random() * 100,
-    top: Math.random() * 100,
-    duration: 5 + Math.random() * 15,
-    delay: Math.random() * 5,
-    size: 2 + Math.random() * 8
-  })));
-
-  const renderBackgroundElements = () => {
-    switch (themeId) {
-      case 'night':
-        return (
-          <>
-            {particles.map((p) => (
-              <div key={p.id} className="absolute bg-white rounded-full animate-pulse shadow-[0_0_12px_white]"
-                style={{ width: '1.5px', height: '1.5px', left: p.left + '%', top: p.top + '%', animationDelay: p.delay + 's', opacity: 0.4 }}
-              />
-            ))}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(100,100,255,0.15)_0%,transparent_70%)]" />
-          </>
-        );
-      case 'snow':
-        return (
-          <>
-            {particles.map((p) => (
-              <div key={p.id} className="absolute text-white/10 animate-[fall_15s_linear_infinite]"
-                style={{ left: p.left + '%', top: '-10%', animationDelay: p.delay + 's', fontSize: p.size + 'px' }}
-              >❄️</div>
-            ))}
-          </>
-        );
-      case 'sakura':
-        return (
-          <>
-            {particles.map((p) => (
-              <div key={p.id} className="absolute text-pink-300/20 animate-[petal-fall_12s_linear_infinite]"
-                style={{ left: p.left + '%', top: '-10%', animationDelay: p.delay + 's', fontSize: '18px' }}
-              >🌸</div>
-            ))}
-          </>
-        );
-      case 'ocean':
-      case 'aquarium':
-        return (
-          <div className="absolute inset-0 bg-gradient-to-b from-cyan-900/10 via-transparent to-cyan-500/10" />
-        );
-      default:
-        return <div className="absolute inset-0 bg-black/40 transition-all duration-1000" />;
-    }
-  };
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none transition-all duration-1000">
-      <div className={`absolute inset-0 transition-opacity duration-1000 ${isActive ? 'opacity-100' : 'opacity-40'}`}>
-        {renderBackgroundElements()}
-      </div>
-    </div>
-  );
-};
 
 interface TimerProps {
   isCustomizing: boolean;
@@ -77,23 +15,44 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [totalTime, setTotalTime] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [themeIndex, setThemeIndex] = useState(0);
-  const [swipeOffset, setSwipeOffset] = useState(0);
-  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   
-  const touchStart = useRef<number | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [customMinutes, setCustomMinutes] = useState(25);
+  const alarmAudioRef = useRef<HTMLAudioElement | null>(null);
+  const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const currentTheme = FOCUS_THEMES[themeIndex];
 
-  // Initialize sounds
   useEffect(() => {
     const alarm = new Audio(ZEN_BOWL_URL);
     alarm.volume = 0.5;
-    audioRef.current = alarm;
+    alarmAudioRef.current = alarm;
   }, []);
 
-  // Timer logic
+  useEffect(() => {
+    if (ambientAudioRef.current) {
+      ambientAudioRef.current.pause();
+      ambientAudioRef.current = null;
+    }
+    if (currentTheme.soundUrl) {
+      const audio = new Audio(currentTheme.soundUrl);
+      audio.loop = true;
+      audio.volume = 0;
+      ambientAudioRef.current = audio;
+      if (isActive && !isMuted) {
+        audio.play().catch(() => {});
+        let vol = 0;
+        const fade = setInterval(() => {
+          vol += 0.05;
+          if (vol >= 0.3) { audio.volume = 0.3; clearInterval(fade); }
+          else audio.volume = vol;
+        }, 150);
+      }
+    }
+    return () => { if (ambientAudioRef.current) ambientAudioRef.current.pause(); };
+  }, [themeIndex, isActive, isMuted]);
+
   useEffect(() => {
     let interval: any = null;
     if (isActive && timeLeft > 0) {
@@ -101,10 +60,7 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             setIsActive(false);
-            if (audioRef.current) {
-              audioRef.current.currentTime = 0;
-              audioRef.current.play();
-            }
+            alarmAudioRef.current?.play();
             if (window.navigator.vibrate) window.navigator.vibrate([400, 100, 400]);
             return totalTime;
           }
@@ -115,54 +71,8 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
     return () => clearInterval(interval);
   }, [isActive, timeLeft, totalTime]);
 
-  const toggleTimer = () => {
-    setIsActive(!isActive);
-    if (window.navigator.vibrate) window.navigator.vibrate(10);
-  };
-
-  const resetTimer = () => {
-    setIsActive(false);
-    setTimeLeft(totalTime);
-    if (window.navigator.vibrate) window.navigator.vibrate(5);
-  };
-
-  const nextTheme = useCallback(() => {
-    setSlideDirection('right');
-    setThemeIndex((prev) => (prev + 1) % FOCUS_THEMES.length);
-    if (window.navigator.vibrate) window.navigator.vibrate(10);
-    setTimeout(() => setSlideDirection(null), 500);
-  }, []);
-
-  const prevTheme = useCallback(() => {
-    setSlideDirection('left');
-    setThemeIndex((prev) => (prev - 1 + FOCUS_THEMES.length) % FOCUS_THEMES.length);
-    if (window.navigator.vibrate) window.navigator.vibrate(10);
-    setTimeout(() => setSlideDirection(null), 500);
-  }, []);
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStart.current = e.targetTouches[0].clientX;
-    setSwipeOffset(0);
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (touchStart.current !== null) {
-      const currentTouch = e.targetTouches[0].clientX;
-      const diff = currentTouch - touchStart.current;
-      setSwipeOffset(diff * 0.4);
-    }
-  };
-
-  const onTouchEnd = () => {
-    if (touchStart.current === null) return;
-    const minSwipeDistance = 60;
-    if (Math.abs(swipeOffset) > minSwipeDistance / 2) {
-      if (swipeOffset < 0) nextTheme();
-      else prevTheme();
-    }
-    setSwipeOffset(0);
-    touchStart.current = null;
-  };
+  const toggleTimer = () => { setIsActive(!isActive); if (window.navigator.vibrate) window.navigator.vibrate(10); };
+  const resetTimer = () => { setIsActive(false); setTimeLeft(totalTime); if (window.navigator.vibrate) window.navigator.vibrate(5); };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -170,130 +80,125 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const progress = totalTime > 0 ? (timeLeft / totalTime) * 100 : 0;
-  const strokeDashoffset = 565 - (565 * progress) / 100;
+  const nextTheme = useCallback(() => {
+    setThemeIndex((prev) => (prev + 1) % FOCUS_THEMES.length);
+    if (window.navigator.vibrate) window.navigator.vibrate(8);
+  }, []);
+
+  const openPicker = () => {
+    setIsActive(false);
+    setIsCustomizing(true);
+    if (window.navigator.vibrate) window.navigator.vibrate(12);
+  };
 
   return (
-    <div 
-      className={`relative flex flex-col items-center h-full w-full transition-all duration-1000 bg-gradient-to-b ${currentTheme.bgGradient} overflow-hidden`}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-    >
-      <ThemeBackgroundFX themeId={currentTheme.id} isActive={isActive} />
-
-      <header className="w-full flex flex-col pt-16 pb-2 px-8 z-50 relative animate-in fade-in slide-in-from-top-2">
-        <h1 className="text-3xl font-bold tracking-tight text-white drop-shadow-lg">Focus</h1>
-        <div className="flex items-center gap-2 mt-1">
-            <p className="text-[9px] uppercase tracking-[0.5em] opacity-40 font-black" style={{ color: currentTheme.color }}>
-                {currentTheme.name}
-            </p>
-            {isActive && <div className="w-1.5 h-1.5 rounded-full animate-pulse shadow-[0_0_8px_currentColor]" style={{ backgroundColor: currentTheme.color, color: currentTheme.color }} />}
+    <div className={`relative flex flex-col items-center h-full w-full bg-black overflow-hidden transition-all duration-1000`}>
+      {/* Background with Theme Gradient Overlay */}
+      <div className={`absolute inset-0 bg-gradient-to-b ${currentTheme.bgGradient} opacity-40 transition-all duration-1000`} />
+      
+      {/* HEADER */}
+      <header className="w-full flex justify-between items-start pt-16 pb-2 px-10 z-50 relative pointer-events-none">
+        <div className="flex flex-col">
+          <h1 className="text-5xl font-bold tracking-tight text-white/95">Focus</h1>
+          <p className="text-[10px] uppercase tracking-[0.5em] font-black mt-2 opacity-30 text-white">
+              {currentTheme.name}
+          </p>
         </div>
       </header>
 
-      <div className="w-full flex-1 flex flex-col items-center justify-center relative -translate-y-16 z-10 px-6">
+      {/* CENTER CONTENT */}
+      <div className="w-full flex-1 flex flex-col items-center justify-center relative z-10 px-6 -mt-12">
+        {/* Theme Bubble Container - Reduced to w-52 h-52 (a bit small) */}
         <div 
-          className={`relative flex items-center justify-center mb-10 transition-all duration-700 cursor-pointer ${isActive ? 'animate-[breath_4s_infinite_ease-in-out]' : ''}`}
-          style={{ transform: `translateX(${swipeOffset}px)` }}
+          className="relative w-52 h-52 flex flex-col items-center justify-center cursor-pointer group mb-10"
           onClick={nextTheme}
         >
-          <svg className="absolute w-[260px] h-[260px] -rotate-90 pointer-events-none overflow-visible">
-            <circle cx="130" cy="130" r="90" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="2" />
-            <circle 
-              cx="130" cy="130" r="90" 
-              fill="transparent" stroke={currentTheme.color} strokeWidth="3" 
-              strokeDasharray="565" strokeDashoffset={strokeDashoffset} 
-              strokeLinecap="round" 
-              className="transition-all duration-1000 ease-linear" 
-              style={{ filter: `drop-shadow(0 0 20px ${currentTheme.color}88)` }} 
-            />
-          </svg>
-
-          <div className={`transition-all duration-1000 ${isActive ? 'scale-110' : 'scale-100'} active:scale-95 ${
-            slideDirection === 'right' ? 'animate-in slide-in-from-right-12' : 
-            slideDirection === 'left' ? 'animate-in slide-in-from-left-12' : ''
-          }`}>
-            <div className="scale-[0.9]">
-              <ThemeAnimator themeId={currentTheme.id} />
-            </div>
-          </div>
-        </div>
-        
-        <div className="text-center w-full mb-6">
-          <div className="text-7xl font-extralight tracking-tighter leading-none tabular-nums text-white drop-shadow-2xl mb-4 transition-all duration-700"
-            style={{ 
-                textShadow: isActive ? `0 0 30px ${currentTheme.color}66` : 'none',
-                opacity: isActive ? 1 : 0.8
-            }}
-          >
-            {formatTime(timeLeft)}
-          </div>
+          {/* Bubble Ring - Matches promo image ring */}
+          <div 
+            className="absolute inset-0 rounded-full border-[2px] bg-white/[0.03] backdrop-blur-md transition-all duration-700 group-hover:scale-105 group-active:scale-95 shadow-[0_0_35px_rgba(0,0,0,0.5)]" 
+            style={{ borderColor: currentTheme.color + 'AA' }} 
+          />
           
-          <div className="flex items-center justify-center gap-2 mb-4">
-            {FOCUS_THEMES.map((t, idx) => (
-              <div 
-                key={idx} 
-                className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${themeIndex === idx ? 'opacity-100 scale-125' : 'opacity-10 scale-75'}`}
-                style={{ backgroundColor: themeIndex === idx ? currentTheme.color : '#fff' }}
-              />
-            ))}
+          {/* Animated Component - Scaled to scale-[0.7] to fit comfortably in the smaller ring */}
+          <div className="scale-[0.7] transition-transform duration-700 z-10">
+             <ThemeAnimator themeId={currentTheme.id} />
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-12">
-          <button onClick={resetTimer} className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/30 hover:text-white/60 active:scale-90 transition-all backdrop-blur-3xl shadow-lg">
-            <RotateCcw size={22} />
+        {/* Digital Time - Kept big as previously requested */}
+        <button 
+          onClick={openPicker}
+          className="text-7xl font-extralight tracking-tight leading-none tabular-nums text-white/90 mb-10 active:scale-95 transition-transform focus:outline-none"
+        >
+          {formatTime(timeLeft)}
+        </button>
+
+        {/* Pagination Dots */}
+        <div className="flex items-center justify-center gap-2.5 mb-12">
+          {FOCUS_THEMES.map((t, idx) => (
+            <div 
+              key={idx} 
+              className={`w-1 h-1 rounded-full transition-all duration-700 ${themeIndex === idx ? 'opacity-100 scale-125' : 'opacity-10 scale-100'}`}
+              style={{ backgroundColor: themeIndex === idx ? currentTheme.color : '#fff' }}
+            />
+          ))}
+        </div>
+
+        {/* CONTROLS - All buttons same size */}
+        <div className="flex items-center justify-center gap-8">
+          <button onClick={resetTimer} className="w-14 h-14 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center text-white/30 hover:text-white transition-all active:scale-90 shadow-lg">
+            <RotateCcw size={18} strokeWidth={1.5} />
           </button>
-          <button onClick={toggleTimer} className="w-20 h-20 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-2xl border border-white/20 bg-white hover:scale-105 group relative overflow-hidden">
+          
+          <button onClick={toggleTimer} className="w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-[0_15px_45px_rgba(255,255,255,0.05)] bg-white text-black">
             {isActive ? (
-                <Pause size={28} fill="black" className="group-active:scale-90 transition-transform relative z-10" />
+                <Pause size={18} fill="black" />
             ) : (
-                <Play size={28} className="ml-1 group-active:scale-90 transition-transform relative z-10" fill="black" />
+                <Play size={18} fill="black" className="ml-0.5" />
             )}
-            <div className={`absolute inset-0 bg-zinc-100/10 opacity-0 group-active:opacity-100 transition-opacity`} />
+          </button>
+
+          <button onClick={openPicker} className="w-14 h-14 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center text-white/30 hover:text-white transition-all active:scale-90 shadow-lg">
+            <Settings2 size={18} strokeWidth={1.5} />
           </button>
         </div>
       </div>
 
-      <style>{`
-        @keyframes breath {
-          0%, 100% { transform: scale(1); filter: brightness(1); }
-          50% { transform: scale(1.03); filter: brightness(1.1); }
-        }
-        @keyframes petal-fall {
-          0% { transform: translateY(-10vh) rotate(0deg) translateX(0); opacity: 0; }
-          10% { opacity: 0.8; }
-          90% { opacity: 0.8; }
-          100% { transform: translateY(110vh) rotate(360deg) translateX(50px); opacity: 0; }
-        }
-        @keyframes fall {
-          0% { transform: translateY(-10vh); opacity: 0; }
-          10% { opacity: 0.8; }
-          100% { transform: translateY(110vh); opacity: 0; }
-        }
-      `}</style>
-
+      {/* CUSTOMIZE OVERLAY */}
       {isCustomizing && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-8 animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-black/95 backdrop-blur-2xl" onClick={() => setIsCustomizing(false)} />
-          <div className="relative w-full max-w-sm apple-blur rounded-[3.5rem] p-8 border border-white/10 shadow-2xl animate-in zoom-in-95 duration-500">
-            <h3 className="text-[11px] font-black mb-10 text-center opacity-30 uppercase tracking-[0.5em]">Focus Duration</h3>
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-8 animate-in fade-in duration-500">
+          <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl" onClick={() => setIsCustomizing(false)} />
+          <div className="relative w-full max-w-sm apple-blur rounded-[3rem] p-8 border border-white/10 shadow-2xl animate-in zoom-in-95 duration-500 overflow-hidden">
+            <h3 className="text-[9px] font-black mb-10 text-center opacity-30 uppercase tracking-[0.5em]">Set Duration</h3>
+            
+            <div className="flex items-center justify-center space-x-10 mb-10">
+              <button onClick={() => setCustomMinutes(m => Math.max(1, m - 1))} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white active:scale-90 transition-all"><Minus size={20} /></button>
+              <div className="text-center min-w-[80px]">
+                <div className="text-6xl font-extralight tabular-nums text-white leading-none">{customMinutes}</div>
+                <div className="text-[8px] uppercase tracking-widest font-black opacity-20 mt-2">Mins</div>
+              </div>
+              <button onClick={() => setCustomMinutes(m => Math.min(180, m + 1))} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white active:scale-90 transition-all"><Plus size={20} /></button>
+            </div>
+
             <div className="grid grid-cols-2 gap-3 mb-10">
-              {PRESETS.map((p) => (
-                <button
-                  key={p.label}
-                  onClick={() => { setTotalTime(p.minutes * 60); setTimeLeft(p.minutes * 60); setIsCustomizing(false); if (window.navigator.vibrate) window.navigator.vibrate(5); }}
-                  className="py-5 px-2 rounded-2xl bg-white/5 border border-white/5 text-[9px] font-black uppercase tracking-widest text-white/40 hover:text-white hover:bg-white/10 active:scale-95 transition-all"
+              {[15, 25, 45, 60].map(min => (
+                <button 
+                  key={min}
+                  onClick={() => setCustomMinutes(min)}
+                  className={`py-3.5 rounded-2xl text-[8px] font-black uppercase tracking-widest transition-all ${customMinutes === min ? 'bg-white text-black' : 'bg-white/5 text-white/40 border border-white/5'}`}
                 >
-                  {p.label} • {p.minutes}M
+                  {min} MINS
                 </button>
               ))}
             </div>
-            <div className="flex gap-4">
-              <button onClick={() => setIsCustomizing(false)} className="flex-1 py-5 rounded-[2rem] bg-white/5 text-[10px] font-black uppercase tracking-widest text-white/20 active:scale-95 transition-all">Cancel</button>
-              <button onClick={() => setIsCustomizing(false)} className="flex-1 py-5 rounded-[2rem] text-black text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all" style={{ backgroundColor: currentTheme.color }}>Set Timer</button>
-            </div>
+
+            <button 
+              onClick={() => { setTotalTime(customMinutes * 60); setTimeLeft(customMinutes * 60); setIsActive(true); setIsCustomizing(false); }} 
+              className="w-full py-5 rounded-[2rem] text-black text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-xl" 
+              style={{ backgroundColor: currentTheme.color }}
+            >
+              Start Focus
+            </button>
           </div>
         </div>
       )}

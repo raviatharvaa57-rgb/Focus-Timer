@@ -7,6 +7,7 @@ export interface FocusTheme {
   icon: string;
   color: string;
   bgGradient: string;
+  soundUrl?: string;
 }
 
 export interface AlarmItem {

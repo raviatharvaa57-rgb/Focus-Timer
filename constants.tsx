@@ -90,21 +90,21 @@ export const CLOCK_THEMES: ClockTheme[] = [
 ];
 
 export const FOCUS_THEMES: FocusTheme[] = [
-  { id: 'coffee', name: 'Coffee Brewing', icon: '☕', color: '#8D6E63', bgGradient: 'from-[#1a120b] to-[#000000]' },
-  { id: 'campfire', name: 'Campfire', icon: '🔥', color: '#FF7043', bgGradient: 'from-[#1b0a00] to-[#000000]' },
-  { id: 'dog', name: 'Dog', icon: '🐶', color: '#FFCC80', bgGradient: 'from-[#14110f] to-[#000000]' },
-  { id: 'cat', name: 'Cat', icon: '🐱', color: '#F48FB1', bgGradient: 'from-[#130f14] to-[#000000]' },
-  { id: 'ocean', name: 'Ocean Waves', icon: '🌊', color: '#4FC3F7', bgGradient: 'from-[#000b14] to-[#000000]' },
-  { id: 'forest', name: 'Forest', icon: '🌳', color: '#81C784', bgGradient: 'from-[#081408] to-[#000000]' },
-  { id: 'night', name: 'Night Sky', icon: '🌌', color: '#9575CD', bgGradient: 'from-[#050514] to-[#000000]' },
-  { id: 'sun', name: 'Sunrise', icon: '🌅', color: '#FFD54F', bgGradient: 'from-[#140f00] to-[#000000]' },
-  { id: 'candle', name: 'Meditation', icon: '🕯️', color: '#FFB74D', bgGradient: 'from-[#0f0a00] to-[#000000]' },
-  { id: 'snow', name: 'Snowfall', icon: '❄️', color: '#E1F5FE', bgGradient: 'from-[#0d101a] to-[#000000]' },
-  { id: 'chocolate', name: 'Chocolate', icon: '🍫', color: '#A1887F', bgGradient: 'from-[#0f0900] to-[#000000]' },
-  { id: 'study', name: 'Study Desk', icon: '📚', color: '#90A4AE', bgGradient: 'from-[#0f1112] to-[#000000]' },
-  { id: 'art', name: 'Art Focus', icon: '🎨', color: '#CE93D8', bgGradient: 'from-[#120f14] to-[#000000]' },
-  { id: 'aquarium', name: 'Aquarium', icon: '🐠', color: '#4DD0E1', bgGradient: 'from-[#001214] to-[#000000]' },
-  { id: 'sakura', name: 'Cherry Blossom', icon: '🌸', color: '#F8BBD0', bgGradient: 'from-[#140d0f] to-[#000000]' },
+  { id: 'coffee', name: 'Coffee Brewing', icon: '☕', color: '#8D6E63', bgGradient: 'from-[#1a120b] to-[#000000]', soundUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_27606368f5.mp3?filename=coffee-shop-ambience-loop-2-9659.mp3' },
+  { id: 'campfire', name: 'Campfire', icon: '🔥', color: '#FF7043', bgGradient: 'from-[#1b0a00] to-[#000000]', soundUrl: 'https://cdn.pixabay.com/download/audio/2021/08/09/audio_82313653f5.mp3?filename=crackling-fireplace-nature-sounds-8012.mp3' },
+  { id: 'dog', name: 'Dog', icon: '🐶', color: '#FFCC80', bgGradient: 'from-[#14110f] to-[#000000]', soundUrl: 'https://cdn.pixabay.com/download/audio/2023/10/24/audio_9593f6c827.mp3?filename=birds-and-nature-174828.mp3' },
+  { id: 'cat', name: 'Cat', icon: '🐱', color: '#F48FB1', bgGradient: 'from-[#130f14] to-[#000000]', soundUrl: 'https://cdn.pixabay.com/download/audio/2022/10/01/audio_7314757c2a.mp3?filename=purring-cat-33240.mp3' },
+  { id: 'ocean', name: 'Ocean Waves', icon: '🌊', color: '#4FC3F7', bgGradient: 'from-[#000b14] to-[#000000]', soundUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_23395669b9.mp3?filename=ocean-waves-1129.mp3' },
+  { id: 'forest', name: 'Forest', icon: '🌳', color: '#81C784', bgGradient: 'from-[#081408] to-[#000000]', soundUrl: 'https://cdn.pixabay.com/download/audio/2022/02/10/audio_51f0415a77.mp3?filename=forest-birds-ambience-1033.mp3' },
+  { id: 'night', name: 'Night Sky', icon: '🌌', color: '#9575CD', bgGradient: 'from-[#050514] to-[#000000]', soundUrl: 'https://cdn.pixabay.com/download/audio/2021/08/09/audio_d086f69116.mp3?filename=summer-night-crickets-and-cicadas-8013.mp3' },
+  { id: 'sun', name: 'Sunrise', icon: '🌅', color: '#FFD54F', bgGradient: 'from-[#140f00] to-[#000000]', soundUrl: 'https://cdn.pixabay.com/download/audio/2022/02/13/audio_78494957f9.mp3?filename=morning-birds-24405.mp3' },
+  { id: 'candle', name: 'Meditation', icon: '🕯️', color: '#FFB74D', bgGradient: 'from-[#0f0a00] to-[#000000]', soundUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_82138b3484.mp3?filename=meditation-bowl-8041.mp3' },
+  { id: 'snow', name: 'Snowfall', icon: '❄️', color: '#E1F5FE', bgGradient: 'from-[#0d101a] to-[#000000]', soundUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_1e0066d214.mp3?filename=wind-howl-1-7663.mp3' },
+  { id: 'chocolate', name: 'Chocolate', icon: '🍫', color: '#A1887F', bgGradient: 'from-[#0f0900] to-[#000000]', soundUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1802315b6d.mp3?filename=lofi-chill-medium-version-111556.mp3' },
+  { id: 'study', name: 'Study Desk', icon: '📚', color: '#90A4AE', bgGradient: 'from-[#0f1112] to-[#000000]', soundUrl: 'https://cdn.pixabay.com/download/audio/2022/05/13/audio_039572c830.mp3?filename=rainy-night-9467.mp3' },
+  { id: 'art', name: 'Art Focus', icon: '🎨', color: '#CE93D8', bgGradient: 'from-[#120f14] to-[#000000]', soundUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_c0c806509a.mp3?filename=acoustic-guitar-loop-7848.mp3' },
+  { id: 'aquarium', name: 'Aquarium', icon: '🐠', color: '#4DD0E1', bgGradient: 'from-[#001214] to-[#000000]', soundUrl: 'https://cdn.pixabay.com/download/audio/2021/11/25/audio_5f49f50e8a.mp3?filename=underwater-ambience-9430.mp3' },
+  { id: 'sakura', name: 'Cherry Blossom', icon: '🌸', color: '#F8BBD0', bgGradient: 'from-[#140d0f] to-[#000000]', soundUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d086f69116.mp3?filename=birds-chirping-7661.mp3' },
 ];
 
 export const PRESETS = [
