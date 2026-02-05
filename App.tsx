@@ -99,14 +99,14 @@ const App: React.FC = () => {
 
       {showProfile && <Profile onClose={() => setShowProfile(false)} />}
 
-      {/* MATCHED BOTTOM NAVIGATION */}
+      {/* MATCHED BOTTOM NAVIGATION - Moved lower by reducing padding and height */}
       {!isImmersiveLandscape && (
-        <div className="w-full px-8 pb-12 z-[1000]">
-          <nav className="mx-auto max-w-lg h-24 bg-black/40 backdrop-blur-[60px] rounded-[3.5rem] border border-white/[0.05] px-4 flex justify-around items-center shadow-2xl">
-            <TabButton active={activeTab === 'clock'} onClick={() => handleTabChange('clock')} icon={<ClockIcon size={24} strokeWidth={1.5} />} label="WORLD" />
-            <TabButton active={activeTab === 'alarm'} onClick={() => handleTabChange('alarm')} icon={<AlarmClock size={24} strokeWidth={1.5} />} label="ALARM" />
-            <TabButton active={activeTab === 'stopwatch'} onClick={() => handleTabChange('stopwatch')} icon={<StopwatchIcon size={24} strokeWidth={1.5} />} label="STOP" />
-            <TabButton active={activeTab === 'timer'} onClick={() => handleTabChange('timer')} icon={<TimerIcon size={24} strokeWidth={1.5} />} label="FOCUS" />
+        <div className="w-full px-6 pb-6 safe-bottom z-[1000]">
+          <nav className="mx-auto max-w-lg h-20 bg-black/40 backdrop-blur-[60px] rounded-[3rem] border border-white/[0.05] px-3 flex justify-around items-center shadow-2xl">
+            <TabButton active={activeTab === 'clock'} onClick={() => handleTabChange('clock')} icon={<ClockIcon size={22} strokeWidth={1.5} />} label="WORLD" />
+            <TabButton active={activeTab === 'alarm'} onClick={() => handleTabChange('alarm')} icon={<AlarmClock size={22} strokeWidth={1.5} />} label="ALARM" />
+            <TabButton active={activeTab === 'stopwatch'} onClick={() => handleTabChange('stopwatch')} icon={<StopwatchIcon size={22} strokeWidth={1.5} />} label="STOP" />
+            <TabButton active={activeTab === 'timer'} onClick={() => handleTabChange('timer')} icon={<TimerIcon size={22} strokeWidth={1.5} />} label="FOCUS" />
           </nav>
         </div>
       )}
@@ -115,7 +115,7 @@ const App: React.FC = () => {
 };
 
 const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: any; label: string }> = ({ active, onClick, icon, label }) => (
-  <button onClick={onClick} className={`flex flex-col items-center justify-center space-y-1.5 flex-1 h-16 rounded-3xl transition-all duration-500 active:scale-95 ${active ? 'bg-white/5 text-white' : 'text-zinc-600'}`}>
+  <button onClick={onClick} className={`flex flex-col items-center justify-center space-y-1 flex-1 h-14 rounded-2xl transition-all duration-500 active:scale-95 ${active ? 'bg-white/5 text-white' : 'text-zinc-600'}`}>
     <div className={`flex items-center justify-center transition-all ${active ? 'scale-110' : 'opacity-60'}`}>
       {icon}
     </div>
