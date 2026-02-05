@@ -13,18 +13,12 @@ interface ClockProps {
   setIsAdding: (val: boolean) => void;
 }
 
-const SwipeableLocationItem: React.FC<{
+const LocationItem: React.FC<{
   loc: WorldLocation;
   time: Date;
   theme: any;
   onDelete: (id: string) => void;
 }> = ({ loc, time, theme, onDelete }) => {
-  const [startX, setStartX] = useState(0);
-  const [currentX, setCurrentX] = useState(0);
-  const [isSwiping, setIsSwiping] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const itemRef = useRef<HTMLDivElement>(null);
-
   const getFormattedLocalTime = (baseTime: Date, offset: number) => {
     const utc = baseTime.getTime() + (baseTime.getTimezoneOffset() * 60000);
     const targetDate = new Date(utc + (3600000 * offset));
@@ -51,55 +45,11 @@ const SwipeableLocationItem: React.FC<{
     return { dayLabel, diffLabel };
   };
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    setStartX(e.targetTouches[0].clientX);
-    setIsSwiping(true);
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!isSwiping) return;
-    const x = e.targetTouches[0].clientX;
-    const diff = x - startX;
-    if (isOpen) {
-      const newX = -80 + diff;
-      setCurrentX(newX > 0 ? 0 : newX);
-    } else {
-      setCurrentX(diff > 0 ? 0 : diff);
-    }
-  };
-
-  const onTouchEnd = () => {
-    setIsSwiping(false);
-    if (currentX < -40) {
-      setIsOpen(true);
-      setCurrentX(-80);
-      if (window.navigator.vibrate) window.navigator.vibrate(10);
-    } else {
-      setIsOpen(false);
-      setCurrentX(0);
-    }
-  };
-
   const { dayLabel, diffLabel } = getTimeInfo(loc.offset);
 
   return (
     <div className="relative overflow-hidden rounded-[2.5rem] mb-3 group">
-      <div className="absolute inset-0 bg-red-600 flex items-center justify-end px-8">
-        <button 
-          onClick={() => onDelete(loc.id)}
-          className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-90 transition-transform"
-        >
-          <Trash2 size={20} />
-        </button>
-      </div>
-      <div 
-        ref={itemRef}
-        className="relative apple-blur py-6 px-7 border border-white/5 flex items-center justify-between transition-transform duration-300 ease-out"
-        style={{ transform: `translateX(${currentX}px)` }}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-      >
+      <div className="relative apple-blur py-6 px-7 border border-white/5 flex items-center justify-between transition-all duration-300">
         <div className="flex flex-col">
           <div className="flex items-center space-x-2 mb-1.5">
             <Globe size={10} className="text-white/20" />
@@ -118,6 +68,12 @@ const SwipeableLocationItem: React.FC<{
           <p className={`text-3xl font-light tracking-tight tabular-nums ${theme.textColor}`}>
             {getFormattedLocalTime(time, loc.offset)}
           </p>
+          <button 
+            onClick={() => onDelete(loc.id)}
+            className="w-10 h-10 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/20 hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-90"
+          >
+            <Trash2 size={16} />
+          </button>
         </div>
       </div>
     </div>
@@ -129,14 +85,12 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
   const [themeIndex, setThemeIndex] = useState(0);
   const [locations, setLocations] = useState<WorldLocation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [swipeOffset, setSwipeOffset] = useState(0);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<WorldLocation[]>([]);
 
-  const touchStart = useRef<number | null>(null);
   const currentTheme = CLOCK_THEMES[themeIndex];
 
   useEffect(() => {
@@ -208,43 +162,18 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
     }
   };
 
-  const nextTheme = useCallback(() => {
-    setSlideDirection('right');
-    setThemeIndex((prev) => (prev + 1) % CLOCK_THEMES.length);
+  const setClockTheme = useCallback((idx: number) => {
+    const direction = idx > themeIndex ? 'right' : 'left';
+    setSlideDirection(direction);
+    setThemeIndex(idx);
     if (window.navigator.vibrate) window.navigator.vibrate(10);
     setTimeout(() => setSlideDirection(null), 500);
-  }, []);
+  }, [themeIndex]);
 
-  const prevTheme = useCallback(() => {
-    setSlideDirection('left');
-    setThemeIndex((prev) => (prev - 1 + CLOCK_THEMES.length) % CLOCK_THEMES.length);
-    if (window.navigator.vibrate) window.navigator.vibrate(10);
-    setTimeout(() => setSlideDirection(null), 500);
-  }, []);
-
-  const onThemeTouchStart = (e: React.TouchEvent) => {
-    touchStart.current = e.targetTouches[0].clientX;
-    setSwipeOffset(0);
-  };
-
-  const onThemeTouchMove = (e: React.TouchEvent) => {
-    if (touchStart.current !== null) {
-      const currentTouch = e.targetTouches[0].clientX;
-      const diff = currentTouch - touchStart.current;
-      setSwipeOffset(diff * 0.6);
-    }
-  };
-
-  const onThemeTouchEnd = () => {
-    if (touchStart.current === null) return;
-    const minSwipeDistance = 60;
-    if (Math.abs(swipeOffset) > minSwipeDistance / 2) {
-      if (swipeOffset < 0) nextTheme();
-      else prevTheme();
-    }
-    setSwipeOffset(0);
-    touchStart.current = null;
-  };
+  const cycleTheme = useCallback(() => {
+    const nextIdx = (themeIndex + 1) % CLOCK_THEMES.length;
+    setClockTheme(nextIdx);
+  }, [themeIndex, setClockTheme]);
 
   const formatTimeMain = (date: Date) => {
     const hours = date.getHours() % 12 || 12;
@@ -273,29 +202,21 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
     <div 
       className={`h-full flex flex-col items-center pt-8 pb-32 transition-all duration-1000 bg-gradient-to-b ${currentTheme.bgGradient} ${currentTheme.textColor} overflow-hidden`}
     >
-      <div 
-        className="w-full flex flex-col items-center shrink-0 pt-8 cursor-grab active:cursor-grabbing"
-        onTouchStart={onThemeTouchStart}
-        onTouchMove={onThemeTouchMove}
-        onTouchEnd={onThemeTouchEnd}
-      >
-        <header 
-          className="w-full flex justify-between items-center mb-6 px-10 animate-in fade-in slide-in-from-top-2 transition-transform duration-500 ease-out"
-          style={{ transform: `translateX(${swipeOffset * 0.3}px)` }}
-        >
+      <div className="w-full flex flex-col items-center shrink-0 pt-8">
+        <header className="w-full flex justify-between items-center mb-6 px-10 animate-in fade-in slide-in-from-top-2 transition-transform duration-500 ease-out">
           <div className="flex flex-col">
             <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-xl">World</h1>
             <p className="text-[10px] uppercase tracking-[0.4em] opacity-30 font-black mt-1" style={{ color: currentTheme.dotColor.replace('bg-', 'text-') }}>{currentTheme.name}</p>
           </div>
         </header>
 
-        {/* Analog Clock */}
+        {/* Analog Clock Face - Interactive Tap to cycle themes */}
         <div 
-          className={`relative w-72 h-72 flex items-center justify-center transition-transform duration-500 ease-out ${
+          onClick={cycleTheme}
+          className={`relative w-72 h-72 flex items-center justify-center cursor-pointer active:scale-[0.98] transition-all duration-500 ease-out ${
             slideDirection === 'right' ? 'animate-in slide-in-from-right-12' : 
             slideDirection === 'left' ? 'animate-in slide-in-from-left-12' : ''
           }`}
-          style={{ transform: `translateX(${swipeOffset}px)` }}
         >
           <svg className="absolute w-full h-full -rotate-90 transform overflow-visible" viewBox="0 0 200 200">
             <circle cx="100" cy="100" r="90" className={`${currentTheme.ringColor} fill-transparent transition-all duration-700`} strokeWidth="0.5" />
@@ -324,25 +245,20 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
           </div>
         </div>
 
-        {/* Pagination Dots */}
-        <div 
-          className="flex items-center space-x-6 mt-12 mb-8 px-2 transition-transform duration-500 ease-out pointer-events-none"
-          style={{ transform: `translateX(${swipeOffset * 0.5}px)` }}
-        >
+        {/* Pagination Dots - Interactive Taps */}
+        <div className="flex items-center space-x-6 mt-6 mb-8 px-2 transition-transform duration-500 ease-out">
           {CLOCK_THEMES.map((theme, idx) => (
-            <div 
+            <button 
               key={theme.id} 
-              className={`w-2.5 h-2.5 rounded-full transition-all duration-700 transform ${themeIndex === idx ? `${theme.dotColor} scale-[1.5] ring-4 ring-white/10 shadow-[0_0_15px_currentColor]` : 'bg-white/10 scale-100'}`} 
+              onClick={() => setClockTheme(idx)}
+              className={`w-3 h-3 rounded-full transition-all duration-700 transform ${themeIndex === idx ? `${theme.dotColor} scale-[1.35] ring-4 ring-white/10 shadow-[0_0_15px_currentColor]` : 'bg-white/10 scale-100'}`} 
             />
           ))}
         </div>
       </div>
 
-      {/* Digital Time Display - SMALL SIZE AS REQUESTED */}
-      <div 
-        className="w-full flex-1 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-1000 transition-transform duration-500 ease-out pb-6"
-        style={{ transform: `translateX(${swipeOffset * 0.7}px)` }}
-      >
+      {/* Digital Time Display */}
+      <div className="w-full flex-1 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-1000 transition-transform duration-500 ease-out pb-6">
         <div className="flex items-baseline justify-center space-x-3">
           <span className="text-5xl font-extralight tracking-tight tabular-nums drop-shadow-lg">{formatTimeMain(time)}</span>
           <span className="text-lg font-light opacity-60">{formatAMPM(time)}</span>
@@ -350,7 +266,7 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
         <div className="mt-2 font-black tracking-[0.3em] text-[9px] uppercase opacity-20">{formatDate(time)}</div>
       </div>
 
-      {/* LOCATIONS LIST (BOTTOM OVERLAY) */}
+      {/* LOCATIONS LIST */}
       <div className="w-full h-1/3 overflow-y-auto hide-scrollbar px-10 pb-10">
         {loading ? (
           <div className="flex justify-center py-10">
@@ -360,7 +276,7 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
           <div className="pb-10">
             {locations.length > 0 ? (
               locations.map((loc) => (
-                <SwipeableLocationItem 
+                <LocationItem 
                   key={loc.id} 
                   loc={loc} 
                   time={time} 
@@ -385,7 +301,7 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
       {isAdding && (
         <div className="fixed inset-0 z-[2000] flex items-end justify-center animate-in fade-in duration-300 px-4 pb-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsAdding(false)} />
-          <div className="relative w-full max-w-lg apple-blur rounded-[3.5rem] p-8 border border-white/10 shadow-2xl animate-in slide-in-from-bottom-full duration-500 ease-out pb-12">
+          <div className="relative w-full max-w-lg apple-blur rounded-[3rem] p-8 border border-white/10 shadow-2xl animate-in slide-in-from-bottom-full duration-500 ease-out pb-12">
             <div className="flex justify-between items-center mb-8">
                <h3 className="text-[11px] font-black opacity-40 uppercase tracking-[0.5em]">Add New City</h3>
                <button onClick={() => setIsAdding(false)} className="p-2 text-white/20 hover:text-white transition-colors">

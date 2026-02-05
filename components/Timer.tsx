@@ -30,6 +30,26 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
     alarmAudioRef.current = alarm;
   }, []);
 
+  const playAlarmThrice = useCallback(() => {
+    if (!alarmAudioRef.current) return;
+    let count = 1;
+    const audio = alarmAudioRef.current;
+    
+    const onEnded = () => {
+      if (count < 3) {
+        count++;
+        audio.currentTime = 0;
+        audio.play().catch(e => console.error("Audio play failed:", e));
+      } else {
+        audio.removeEventListener('ended', onEnded);
+      }
+    };
+
+    audio.addEventListener('ended', onEnded);
+    audio.currentTime = 0;
+    audio.play().catch(e => console.error("Audio play failed:", e));
+  }, []);
+
   useEffect(() => {
     if (ambientAudioRef.current) {
       ambientAudioRef.current.pause();
@@ -60,7 +80,7 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             setIsActive(false);
-            alarmAudioRef.current?.play();
+            playAlarmThrice();
             if (window.navigator.vibrate) window.navigator.vibrate([400, 100, 400]);
             return totalTime;
           }
@@ -69,7 +89,7 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isActive, timeLeft, totalTime]);
+  }, [isActive, timeLeft, totalTime, playAlarmThrice]);
 
   const toggleTimer = () => { setIsActive(!isActive); if (window.navigator.vibrate) window.navigator.vibrate(10); };
   const resetTimer = () => { setIsActive(false); setTimeLeft(totalTime); if (window.navigator.vibrate) window.navigator.vibrate(5); };
@@ -92,74 +112,83 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
   };
 
   return (
-    <div className={`relative flex flex-col items-center h-full w-full bg-black overflow-hidden transition-all duration-1000`}>
+    <div className={`relative flex flex-col h-full w-full bg-black overflow-hidden transition-all duration-1000 pb-20`}>
       {/* Background with Theme Gradient Overlay */}
-      <div className={`absolute inset-0 bg-gradient-to-b ${currentTheme.bgGradient} opacity-40 transition-all duration-1000`} />
+      <div className={`absolute inset-0 bg-gradient-to-b ${currentTheme.bgGradient} opacity-30 transition-all duration-1000`} />
       
       {/* HEADER */}
-      <header className="w-full flex justify-between items-start pt-16 pb-2 px-10 z-50 relative pointer-events-none">
-        <div className="flex flex-col">
-          <h1 className="text-5xl font-bold tracking-tight text-white/95">Focus</h1>
-          <p className="text-[10px] uppercase tracking-[0.5em] font-black mt-2 opacity-30 text-white">
-              {currentTheme.name}
-          </p>
-        </div>
+      <header className="w-full flex flex-col items-start pt-16 pb-2 px-10 z-50 relative pointer-events-none">
+        <h1 className="text-4xl font-bold tracking-tight text-white/90">Focus</h1>
+        <p className="text-[10px] uppercase tracking-[0.4em] font-black mt-1 opacity-30 text-white">
+            {currentTheme.name}
+        </p>
       </header>
 
-      {/* CENTER CONTENT */}
-      <div className="w-full flex-1 flex flex-col items-center justify-center relative z-10 px-6 -mt-12">
-        {/* Theme Bubble Container - Reduced to w-52 h-52 (a bit small) */}
+      {/* CONTENT AREA */}
+      <div className="w-full flex-1 flex flex-col items-center justify-between relative z-10 px-6 py-4">
+        
+        {/* Top: Theme Bubble */}
         <div 
-          className="relative w-52 h-52 flex flex-col items-center justify-center cursor-pointer group mb-10"
+          className="relative w-52 h-52 flex flex-col items-center justify-center cursor-pointer group"
           onClick={nextTheme}
         >
-          {/* Bubble Ring - Matches promo image ring */}
+          {/* Bubble Ring */}
           <div 
-            className="absolute inset-0 rounded-full border-[2px] bg-white/[0.03] backdrop-blur-md transition-all duration-700 group-hover:scale-105 group-active:scale-95 shadow-[0_0_35px_rgba(0,0,0,0.5)]" 
-            style={{ borderColor: currentTheme.color + 'AA' }} 
+            className="absolute inset-0 rounded-full border border-white/5 bg-white/[0.02] backdrop-blur-md transition-all duration-700 group-hover:scale-105 group-active:scale-95 shadow-2xl" 
           />
           
-          {/* Animated Component - Scaled to scale-[0.7] to fit comfortably in the smaller ring */}
-          <div className="scale-[0.7] transition-transform duration-700 z-10">
+          {/* Animated Component */}
+          <div className="scale-[0.85] transition-transform duration-700 z-10">
              <ThemeAnimator themeId={currentTheme.id} />
           </div>
         </div>
 
-        {/* Digital Time - Kept big as previously requested */}
-        <button 
-          onClick={openPicker}
-          className="text-7xl font-extralight tracking-tight leading-none tabular-nums text-white/90 mb-10 active:scale-95 transition-transform focus:outline-none"
-        >
-          {formatTime(timeLeft)}
-        </button>
+        {/* Center: Time and Dots */}
+        <div className="flex flex-col items-center">
+          <button 
+            onClick={openPicker}
+            className="text-[6.5rem] font-bold tracking-tighter leading-none tabular-nums text-white mb-2 active:scale-95 transition-transform focus:outline-none"
+          >
+            {formatTime(timeLeft)}
+          </button>
 
-        {/* Pagination Dots */}
-        <div className="flex items-center justify-center gap-2.5 mb-12">
-          {FOCUS_THEMES.map((t, idx) => (
-            <div 
-              key={idx} 
-              className={`w-1 h-1 rounded-full transition-all duration-700 ${themeIndex === idx ? 'opacity-100 scale-125' : 'opacity-10 scale-100'}`}
-              style={{ backgroundColor: themeIndex === idx ? currentTheme.color : '#fff' }}
-            />
-          ))}
+          {/* Pagination Dots */}
+          <div className="flex items-center justify-center gap-2 mb-8">
+            {FOCUS_THEMES.map((t, idx) => (
+              <div 
+                key={idx} 
+                className={`w-1 h-1 rounded-full transition-all duration-500 ${themeIndex === idx ? 'opacity-100 scale-125' : 'opacity-10'}`}
+                style={{ backgroundColor: themeIndex === idx ? currentTheme.color : '#fff' }}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* CONTROLS - All buttons same size */}
-        <div className="flex items-center justify-center gap-8">
-          <button onClick={resetTimer} className="w-14 h-14 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center text-white/30 hover:text-white transition-all active:scale-90 shadow-lg">
-            <RotateCcw size={18} strokeWidth={1.5} />
+        {/* Bottom: The Control Pill */}
+        <div className="flex items-center justify-center gap-6 bg-zinc-900/60 backdrop-blur-3xl py-4 px-7 rounded-[2.5rem] border border-white/5 shadow-2xl mb-4">
+          <button 
+            onClick={resetTimer} 
+            className="w-12 h-12 rounded-full bg-white/[0.05] border border-white/5 flex items-center justify-center text-white/40 hover:text-white transition-all active:scale-90"
+          >
+            <RotateCcw size={18} strokeWidth={2} />
           </button>
           
-          <button onClick={toggleTimer} className="w-14 h-14 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-[0_15px_45px_rgba(255,255,255,0.05)] bg-white text-black">
+          <button 
+            onClick={toggleTimer} 
+            className="w-16 h-16 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-[0_10px_30px_rgba(255,255,255,0.1)] bg-white text-black"
+          >
             {isActive ? (
-                <Pause size={18} fill="black" />
+                <Pause size={24} fill="currentColor" />
             ) : (
-                <Play size={18} fill="black" className="ml-0.5" />
+                <Play size={24} fill="currentColor" className="ml-1" />
             )}
           </button>
 
-          <button onClick={openPicker} className="w-14 h-14 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center text-white/30 hover:text-white transition-all active:scale-90 shadow-lg">
-            <Settings2 size={18} strokeWidth={1.5} />
+          <button 
+            onClick={openPicker} 
+            className="w-12 h-12 rounded-full bg-white/[0.05] border border-white/5 flex items-center justify-center text-white/40 hover:text-white transition-all active:scale-90"
+          >
+            <Settings2 size={18} strokeWidth={2} />
           </button>
         </div>
       </div>
@@ -169,13 +198,13 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-8 animate-in fade-in duration-500">
           <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl" onClick={() => setIsCustomizing(false)} />
           <div className="relative w-full max-w-sm apple-blur rounded-[3rem] p-8 border border-white/10 shadow-2xl animate-in zoom-in-95 duration-500 overflow-hidden">
-            <h3 className="text-[9px] font-black mb-10 text-center opacity-30 uppercase tracking-[0.5em]">Set Duration</h3>
+            <h3 className="text-[10px] font-black mb-8 text-center opacity-30 uppercase tracking-[0.5em]">Set Duration</h3>
             
             <div className="flex items-center justify-center space-x-10 mb-10">
               <button onClick={() => setCustomMinutes(m => Math.max(1, m - 1))} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white active:scale-90 transition-all"><Minus size={20} /></button>
               <div className="text-center min-w-[80px]">
-                <div className="text-6xl font-extralight tabular-nums text-white leading-none">{customMinutes}</div>
-                <div className="text-[8px] uppercase tracking-widest font-black opacity-20 mt-2">Mins</div>
+                <div className="text-6xl font-light tabular-nums text-white leading-none">{customMinutes}</div>
+                <div className="text-[9px] uppercase tracking-widest font-bold opacity-20 mt-2">Mins</div>
               </div>
               <button onClick={() => setCustomMinutes(m => Math.min(180, m + 1))} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white active:scale-90 transition-all"><Plus size={20} /></button>
             </div>
@@ -185,7 +214,7 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
                 <button 
                   key={min}
                   onClick={() => setCustomMinutes(min)}
-                  className={`py-3.5 rounded-2xl text-[8px] font-black uppercase tracking-widest transition-all ${customMinutes === min ? 'bg-white text-black' : 'bg-white/5 text-white/40 border border-white/5'}`}
+                  className={`py-4 rounded-2xl text-[9px] font-bold uppercase tracking-widest transition-all ${customMinutes === min ? 'bg-white text-black' : 'bg-white/5 text-white/40 border border-white/5'}`}
                 >
                   {min} MINS
                 </button>
@@ -193,11 +222,15 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
             </div>
 
             <button 
-              onClick={() => { setTotalTime(customMinutes * 60); setTimeLeft(customMinutes * 60); setIsActive(true); setIsCustomizing(false); }} 
-              className="w-full py-5 rounded-[2rem] text-black text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-xl" 
+              onClick={() => { 
+                setTotalTime(customMinutes * 60); 
+                setTimeLeft(customMinutes * 60); 
+                setIsCustomizing(false); 
+              }} 
+              className="w-full py-5 rounded-[2rem] text-black text-[11px] font-bold uppercase tracking-widest transition-all active:scale-95 shadow-xl" 
               style={{ backgroundColor: currentTheme.color }}
             >
-              Start Focus
+              Set Focus
             </button>
           </div>
         </div>
