@@ -14,8 +14,8 @@ This app focuses on simplicity, speed, and a calm UI to improve focus sessions.
 ## 📸 Preview
 > Screenshots and demo previews can be added here later.
 > <img width="1918" height="906" alt="image" src="https://github.com/user-attachments/assets/4c957e8e-27bb-4d04-bfd4-9ce2ffd9b264" />
-<img width="1918" height="912" alt="image" src="https://github.com/user-attachments/assets/280221e6-5499-4b2c-96f8-4c57c019507e" />
 <img width="1918" height="907" alt="image" src="https://github.com/user-attachments/assets/d5141180-5dde-41fa-acbb-b5de1242cc5b" />
+<img width="1918" height="912" alt="image" src="https://github.com/user-attachments/assets/280221e6-5499-4b2c-96f8-4c57c019507e" />
 <img width="1918" height="907" alt="image" src="https://github.com/user-attachments/assets/ccce6be1-c463-4ef4-ac94-25eabf668d2c" />
 <img width="1918" height="907" alt="image" src="https://github.com/user-attachments/assets/cf1b4968-24cd-42a8-9eba-62497884870b" />
 
