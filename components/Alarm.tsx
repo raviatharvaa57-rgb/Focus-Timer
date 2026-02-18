@@ -32,8 +32,10 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    audioRef.current = new Audio(ZEN_BOWL_URL);
-    audioRef.current.volume = 0.6;
+    const audio = new Audio(ZEN_BOWL_URL);
+    audio.volume = 0.6;
+    audio.loop = true; // Set to loop indefinitely until stopped
+    audioRef.current = audio;
 
     const unsubscribe = db.collection('users')
       .doc(user.uid)
@@ -51,7 +53,13 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
         setLoading(false);
       });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
   }, [user.uid]);
 
   const playAlarmSound = useCallback(() => {
@@ -355,26 +363,27 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
         </div>
       )}
 
-      {/* FIRING ALARM OVERLAY */}
+      {/* FIRING ALARM OVERLAY - Enhanced pulsing atmosphere and looping audio */}
       {firingAlarm && (
-        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center p-8 animate-in fade-in duration-500 overflow-hidden">
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-3xl" />
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center p-8 animate-in fade-in duration-700 overflow-hidden">
+          {/* Enhanced Animated Fullscreen Background */}
+          <div className="absolute inset-0 bg-black" />
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-900/40 via-black to-orange-950/40 animate-pulse duration-[3s]" />
           
-          {/* Pulsing Atmosphere */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-orange-500/10 rounded-full blur-[120px] animate-pulse" />
-          </div>
+          {/* Immersive Breathing Glow */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180%] h-[180%] bg-orange-500/20 rounded-full blur-[140px] animate-[pulse_2s_infinite_ease-in-out]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-orange-600/10 rounded-full blur-[80px] animate-[pulse_1.5s_infinite_ease-in-out]" />
 
-          <div className="relative z-10 text-center animate-in zoom-in-95 slide-in-from-bottom-12 duration-700">
-             <div className="w-32 h-32 rounded-[3.5rem] bg-orange-500/20 border border-orange-500/30 flex items-center justify-center mx-auto mb-10 shadow-[0_0_80px_rgba(249,115,22,0.2)] animate-bounce">
-                <BellRing size={48} className="text-orange-500" />
+          <div className="relative z-10 text-center animate-in zoom-in-95 slide-in-from-bottom-24 duration-1000 ease-out">
+             <div className="w-36 h-36 rounded-[4rem] bg-orange-500/30 border border-orange-500/40 flex items-center justify-center mx-auto mb-12 shadow-[0_0_100px_rgba(249,115,22,0.4)] animate-bounce">
+                <BellRing size={56} className="text-orange-500 drop-shadow-[0_0_15px_rgba(249,115,22,0.8)]" />
              </div>
              
-             <h2 className="text-6xl font-extralight tracking-tighter tabular-nums mb-4 text-white">
+             <h2 className="text-7xl font-extralight tracking-tighter tabular-nums mb-6 text-white drop-shadow-2xl">
                {formatDisplayTime(firingAlarm.time).h12}:{formatDisplayTime(firingAlarm.time).m}
              </h2>
              
-             <p className="text-[12px] uppercase tracking-[0.5em] text-orange-500 font-black mb-16 animate-pulse">
+             <p className="text-[14px] uppercase tracking-[0.6em] text-orange-500 font-black mb-20 animate-pulse drop-shadow-sm">
                {firingAlarm.label || 'Alarm'}
              </p>
              
@@ -386,12 +395,15 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
                    audioRef.current.currentTime = 0;
                  }
                }}
-               className="group relative px-16 py-6 rounded-[2.5rem] bg-white text-black font-black uppercase tracking-[0.3em] text-[11px] shadow-[0_0_40px_rgba(255,255,255,0.2)] active:scale-95 transition-all overflow-hidden"
+               className="group relative px-20 py-7 rounded-[3rem] bg-white text-black font-black uppercase tracking-[0.4em] text-[12px] shadow-[0_0_60px_rgba(255,255,255,0.3)] active:scale-90 hover:scale-105 transition-all overflow-hidden"
              >
                <span className="relative z-10">Stop Alarm</span>
                <div className="absolute inset-0 bg-zinc-100 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
              </button>
           </div>
+          
+          {/* Secondary pulsating ring */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 border-2 border-orange-500/20 rounded-full animate-ping duration-[2s]" />
         </div>
       )}
     </div>

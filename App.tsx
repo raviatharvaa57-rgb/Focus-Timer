@@ -56,17 +56,6 @@ const App: React.FC = () => {
     auth.signOut();
   };
 
-  const renderContent = () => {
-    if (!user) return null;
-    switch (activeTab) {
-      case 'timer': return <Timer isCustomizing={isActionActive} setIsCustomizing={setIsActionActive} />;
-      case 'alarm': return <Alarm user={user} isAdding={isActionActive} setIsAdding={setIsActionActive} />;
-      case 'stopwatch': return <Stopwatch />;
-      case 'clock': return <Clock user={user} isAdding={isActionActive} setIsAdding={setIsActionActive} />;
-      default: return <Timer isCustomizing={isActionActive} setIsCustomizing={setIsActionActive} />;
-    }
-  };
-
   if (loading) return null;
   if (!user) return <Auth />;
 
@@ -94,7 +83,22 @@ const App: React.FC = () => {
       )}
 
       <main className="flex-1 relative overflow-hidden">
-        {renderContent()}
+        {/* Render all tabs simultaneously but hide inactive ones to keep background processes running */}
+        <div className={`absolute inset-0 ${activeTab === 'timer' ? 'block' : 'hidden'}`}>
+          <Timer isCustomizing={isActionActive} setIsCustomizing={setIsActionActive} />
+        </div>
+        
+        <div className={`absolute inset-0 ${activeTab === 'alarm' ? 'block' : 'hidden'}`}>
+          <Alarm user={user} isAdding={isActionActive} setIsAdding={setIsActionActive} />
+        </div>
+        
+        <div className={`absolute inset-0 ${activeTab === 'stopwatch' ? 'block' : 'hidden'}`}>
+          <Stopwatch />
+        </div>
+        
+        <div className={`absolute inset-0 ${activeTab === 'clock' ? 'block' : 'hidden'}`}>
+          <Clock user={user} isAdding={isActionActive} setIsAdding={setIsActionActive} />
+        </div>
       </main>
 
       {showProfile && <Profile onClose={() => setShowProfile(false)} />}
@@ -104,7 +108,7 @@ const App: React.FC = () => {
         <div className="w-full px-6 pb-3 safe-bottom z-[1000]">
           <nav className="mx-auto max-w-lg h-18 bg-black/40 backdrop-blur-[60px] rounded-[3rem] border border-white/[0.05] px-3 flex justify-around items-center shadow-2xl">
             <TabButton active={activeTab === 'clock'} onClick={() => handleTabChange('clock')} icon={<ClockIcon size={20} strokeWidth={1.5} />} label="WORLD" />
-            <TabButton active={activeTab === 'alarm'} onClick={() => handleTabChange('alarm')} icon={<AlarmClock size={20} strokeWidth={1.5} />} label="ALARM" />
+            <TabButton active={activeTab === 'alarm'} onClick={() => handleTabChange('alarm'} icon={<AlarmClock size={20} strokeWidth={1.5} />} label="ALARM" />
             <TabButton active={activeTab === 'stopwatch'} onClick={() => handleTabChange('stopwatch')} icon={<StopwatchIcon size={20} strokeWidth={1.5} />} label="STOP" />
             <TabButton active={activeTab === 'timer'} onClick={() => handleTabChange('timer')} icon={<TimerIcon size={20} strokeWidth={1.5} />} label="FOCUS" />
           </nav>

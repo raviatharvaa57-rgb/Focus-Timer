@@ -5,7 +5,30 @@ import { CLOCK_THEMES } from '../constants';
 import { WorldLocation } from '../types';
 import { db } from '../firebase';
 import firebase from 'firebase/compat/app';
-import { GoogleGenAI } from "@google/genai";
+
+// Static database of major world cities to replace AI search
+const WORLD_CITIES: WorldLocation[] = [
+  { id: '1', name: 'Tokyo', country: 'Japan', offset: 9, mood: 'Neon' },
+  { id: '2', name: 'New York', country: 'USA', offset: -5, mood: 'Busy' },
+  { id: '3', name: 'London', country: 'UK', offset: 0, mood: 'Classic' },
+  { id: '4', name: 'Paris', country: 'France', offset: 1, mood: 'Romantic' },
+  { id: '5', name: 'Dubai', country: 'UAE', offset: 4, mood: 'Luxury' },
+  { id: '6', name: 'Singapore', country: 'Singapore', offset: 8, mood: 'Clean' },
+  { id: '7', name: 'Sydney', country: 'Australia', offset: 11, mood: 'Sunny' },
+  { id: '8', name: 'Berlin', country: 'Germany', offset: 1, mood: 'Creative' },
+  { id: '9', name: 'Seoul', country: 'South Korea', offset: 9, mood: 'Tech' },
+  { id: '10', name: 'Los Angeles', country: 'USA', offset: -8, mood: 'Cinematic' },
+  { id: '11', name: 'Mumbai', country: 'India', offset: 5.5, mood: 'Bustling' },
+  { id: '12', name: 'Cairo', country: 'Egypt', offset: 2, mood: 'Ancient' },
+  { id: '13', name: 'Rio de Janeiro', country: 'Brazil', offset: -3, mood: 'Festive' },
+  { id: '14', name: 'Reykjavik', country: 'Iceland', offset: 0, mood: 'Ethereal' },
+  { id: '15', name: 'Bangkok', country: 'Thailand', offset: 7, mood: 'Exotic' },
+  { id: '16', name: 'Rome', country: 'Italy', offset: 1, mood: 'Historic' },
+  { id: '17', name: 'Hong Kong', country: 'China', offset: 8, mood: 'Vibrant' },
+  { id: '18', name: 'Toronto', country: 'Canada', offset: -5, mood: 'Diverse' },
+  { id: '19', name: 'Cape Town', country: 'South Africa', offset: 2, mood: 'Scenic' },
+  { id: '20', name: 'Moscow', country: 'Russia', offset: 3, mood: 'Grand' },
+];
 
 interface ClockProps {
   user: firebase.User;
@@ -120,31 +143,31 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
     return () => unsubscribe();
   }, [user.uid]);
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    setIsSearching(true);
-    setSearchResults([]);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `I need a JSON array of up to 3 likely city matches for the query: "${searchQuery}". 
-        Each object should have: "name" (city name), "offset" (UTC offset in hours as a number), "mood" (a creative 1-word atmosphere like Vibrant, Busy, Quiet, Dreaming, Neon, Festive), and "country" (country name). 
-        Return ONLY valid JSON. Example: [{"name": "Tokyo", "offset": 9, "mood": "Neon", "country": "Japan"}]`,
-        config: { responseMimeType: "application/json" }
-      });
-      
-      const text = response.text || "[]";
-      const data = JSON.parse(text);
-      if (Array.isArray(data)) {
-        setSearchResults(data.map((item, idx) => ({ ...item, id: `result-${idx}` })));
-      }
-    } catch (e) {
-      console.error("Gemini city search failed", e);
-    } finally {
-      setIsSearching(false);
+  const handleSearch = () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
     }
+    setIsSearching(true);
+    
+    // Simulate a snappy local search delay for smooth UI feel
+    setTimeout(() => {
+      const results = WORLD_CITIES.filter(city => 
+        city.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        city.country?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setSearchResults(results);
+      setIsSearching(false);
+    }, 200);
   };
+
+  // Trigger search on typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      handleSearch();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const addLocation = async (loc: WorldLocation) => {
     try {
@@ -210,7 +233,7 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
           </div>
         </header>
 
-        {/* Analog Clock Face - Interactive Tap to cycle themes */}
+        {/* Analog Clock Face */}
         <div 
           onClick={cycleTheme}
           className={`relative w-72 h-72 flex items-center justify-center cursor-pointer active:scale-[0.98] transition-all duration-500 ease-out ${
@@ -245,7 +268,7 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
           </div>
         </div>
 
-        {/* Pagination Dots - Interactive Taps */}
+        {/* Pagination Dots */}
         <div className="flex items-center space-x-6 mt-6 mb-8 px-2 transition-transform duration-500 ease-out">
           {CLOCK_THEMES.map((theme, idx) => (
             <button 
@@ -257,7 +280,6 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
         </div>
       </div>
 
-      {/* Digital Time Display */}
       <div className="w-full flex-1 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-1000 transition-transform duration-500 ease-out pb-6">
         <div className="flex items-baseline justify-center space-x-3">
           <span className="text-5xl font-extralight tracking-tight tabular-nums drop-shadow-lg">{formatTimeMain(time)}</span>
@@ -266,7 +288,6 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
         <div className="mt-2 font-black tracking-[0.3em] text-[9px] uppercase opacity-20">{formatDate(time)}</div>
       </div>
 
-      {/* LOCATIONS LIST */}
       <div className="w-full h-1/3 overflow-y-auto hide-scrollbar px-10 pb-10">
         {loading ? (
           <div className="flex justify-center py-10">
@@ -316,48 +337,50 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
                    placeholder="Search City..."
                    value={searchQuery}
                    onChange={e => setSearchQuery(e.target.value)}
-                   onKeyDown={e => e.key === 'Enter' && handleSearch()}
                    className="w-full bg-white/5 rounded-2xl py-5 pl-14 pr-6 text-sm font-medium focus:outline-none border border-white/5 text-white placeholder:text-white/10"
                  />
                  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                 <button 
-                   onClick={handleSearch}
-                   disabled={isSearching}
-                   className="absolute right-4 top-1/2 -translate-y-1/2 px-4 py-2 bg-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-all disabled:opacity-30"
-                 >
-                   {isSearching ? <Loader2 size={12} className="animate-spin" /> : 'Find'}
-                 </button>
                </div>
 
                <div className="space-y-3 max-h-60 overflow-y-auto hide-scrollbar">
                  {isSearching ? (
                    <div className="py-12 flex flex-col items-center justify-center space-y-4 opacity-30">
                      <Loader2 className="animate-spin" size={24} />
-                     <span className="text-[9px] font-black uppercase tracking-widest">Gemini is exploring...</span>
+                     <span className="text-[9px] font-black uppercase tracking-widest">Searching cities...</span>
                    </div>
                  ) : (
                    <>
-                     {searchResults.map((loc) => (
-                       <button
-                         key={loc.id}
-                         onClick={() => addLocation(loc)}
-                         className="w-full text-left p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-white/20 transition-all flex items-center justify-between group active:scale-[0.98]"
-                       >
-                         <div className="flex items-center space-x-4">
-                           <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center text-white/20 group-hover:text-white transition-colors">
-                             <MapPin size={18} />
+                     {searchResults.length > 0 ? (
+                       searchResults.map((loc) => (
+                         <button
+                           key={loc.id}
+                           onClick={() => addLocation(loc)}
+                           className="w-full text-left p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-white/20 transition-all flex items-center justify-between group active:scale-[0.98]"
+                         >
+                           <div className="flex items-center space-x-4">
+                             <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center text-white/20 group-hover:text-white transition-colors">
+                               <MapPin size={18} />
+                             </div>
+                             <div>
+                               <div className="text-sm font-bold text-white mb-0.5">{loc.name}</div>
+                               <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500">{loc.country}</div>
+                             </div>
                            </div>
-                           <div>
-                             <div className="text-sm font-bold text-white mb-0.5">{loc.name}</div>
-                             <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500">{loc.country}</div>
+                           <div className="text-right">
+                              <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">{loc.mood}</div>
+                              <div className="text-[8px] font-black text-white/20 uppercase tracking-widest">UTC {loc.offset >= 0 ? '+' : ''}{loc.offset}</div>
                            </div>
-                         </div>
-                         <div className="text-right">
-                            <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">{loc.mood}</div>
-                            <div className="text-[8px] font-black text-white/20 uppercase tracking-widest">UTC {loc.offset >= 0 ? '+' : ''}{loc.offset}</div>
-                         </div>
-                       </button>
-                     ))}
+                         </button>
+                       ))
+                     ) : searchQuery.length > 0 ? (
+                       <div className="py-12 text-center opacity-20 text-[9px] font-black uppercase tracking-widest">
+                         No matches found
+                       </div>
+                     ) : (
+                       <div className="py-8 text-center opacity-10 text-[9px] font-black uppercase tracking-[0.5em]">
+                         Start typing to find a city
+                       </div>
+                     )}
                    </>
                  )}
                </div>
