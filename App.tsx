@@ -108,7 +108,7 @@ const App: React.FC = () => {
         <div className="w-full px-6 pb-3 safe-bottom z-[1000]">
           <nav className="mx-auto max-w-lg h-18 bg-black/40 backdrop-blur-[60px] rounded-[3rem] border border-white/[0.05] px-3 flex justify-around items-center shadow-2xl">
             <TabButton active={activeTab === 'clock'} onClick={() => handleTabChange('clock')} icon={<ClockIcon size={20} strokeWidth={1.5} />} label="WORLD" />
-            <TabButton active={activeTab === 'alarm'} onClick={() => handleTabChange('alarm'} icon={<AlarmClock size={20} strokeWidth={1.5} />} label="ALARM" />
+            <TabButton active={activeTab === 'alarm'} onClick={() => handleTabChange('alarm')} icon={<AlarmClock size={20} strokeWidth={1.5} />} label="ALARM" />
             <TabButton active={activeTab === 'stopwatch'} onClick={() => handleTabChange('stopwatch')} icon={<StopwatchIcon size={20} strokeWidth={1.5} />} label="STOP" />
             <TabButton active={activeTab === 'timer'} onClick={() => handleTabChange('timer')} icon={<TimerIcon size={20} strokeWidth={1.5} />} label="FOCUS" />
           </nav>
