@@ -1,20 +1,46 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# ⏱ Focus Timer App
 
-# Run and deploy your AI Studio app
+A clean, minimal, and distraction-free **Focus / Pomodoro Timer** built to help users stay productive, relaxed, and consistent while studying or working.
 
-This contains everything you need to run your app locally.
+This app focuses on simplicity, speed, and a calm user experience to improve focus sessions.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1UawBT6RcGNXHk2-X0hD628dWL5S5hSdS
+---
 
-## Run Locally
+## 🌐 Live Application
+👉 https://focus-timer-taupe-sigma.vercel.app/
 
-**Prerequisites:**  Node.js
+---
 
+## ✨ Features
+- ⏳ 25-minute default focus timer (Pomodoro style)
+- ▶️ Start, ⏸ Pause, and 🔄 Reset controls
+- 🌙 Dark-themed, focus-friendly UI
+- 📱 Fully responsive (mobile & desktop)
+- ⚡ Fast performance and smooth timing
+- ☁️ Deployed on Vercel
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+---
+
+## 🛠 Tech Stack
+- **Next.js**
+- **React**
+- **JavaScript**
+- **CSS**
+
+---
+
+## 📁 Project Structure
+```txt
+focus-timer-app/
+├─ app/
+│  ├─ layout.js
+│  ├─ page.js
+│  └─ globals.css
+├─ components/
+│  └─ Timer.jsx
+├─ public/
+├─ package.json
+├─ next.config.js
+└─ README.md
+---
+This app was build by Atharvaa Ravichandran. 
