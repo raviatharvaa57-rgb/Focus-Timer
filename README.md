@@ -22,10 +22,8 @@ This app focuses on simplicity, speed, and a calm user experience to improve foc
 ---
 
 ## 🛠 Tech Stack
-- **Next.js**
-- **React**
-- **JavaScript**
-- **CSS**
+- **TypeScript**
+- **HTML**
 
 ---
 
