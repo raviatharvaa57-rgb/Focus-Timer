@@ -31,8 +31,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
-      if (currentUser && currentUser.emailVerified) setUser(currentUser);
-      else setUser(null);
+      setUser(currentUser);
       setLoading(false);
     });
 

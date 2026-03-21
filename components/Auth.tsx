@@ -72,16 +72,9 @@ const Auth: React.FC = () => {
       } else if (isLogin) {
         const cred = await auth.signInWithEmailAndPassword(email, password);
         if (cred.user) {
-          if (!cred.user.emailVerified) {
-            await cred.user.sendEmailVerification();
-            localStorage.setItem('focus_remembered_creds', JSON.stringify({ email, password }));
-            await auth.signOut();
-            setVerificationEmail(email);
-          } else {
-            // Ensure profile is synced on login
-            await syncUserToFirestore(cred.user);
-            localStorage.removeItem('focus_remembered_creds');
-          }
+          // Ensure profile is synced on login
+          await syncUserToFirestore(cred.user);
+          localStorage.removeItem('focus_remembered_creds');
         }
       } else {
         if (password !== confirmPassword) {
@@ -93,11 +86,7 @@ const Auth: React.FC = () => {
           await cred.user.updateProfile({ displayName: name });
           // Register in Firestore immediately
           await syncUserToFirestore(cred.user, name);
-          
-          await cred.user.sendEmailVerification();
-          localStorage.setItem('focus_remembered_creds', JSON.stringify({ email, password }));
-          await auth.signOut();
-          setVerificationEmail(email);
+          localStorage.removeItem('focus_remembered_creds');
         }
       }
       if (window.navigator.vibrate) window.navigator.vibrate(20);
