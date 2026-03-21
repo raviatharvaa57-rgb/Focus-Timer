@@ -86,7 +86,12 @@ const Auth: React.FC = () => {
           await cred.user.updateProfile({ displayName: name });
           // Register in Firestore immediately
           await syncUserToFirestore(cred.user, name);
+          // Send verification email
+          await cred.user.sendEmailVerification();
           localStorage.removeItem('focus_remembered_creds');
+          setVerificationEmail(email);
+          setLoading(false);
+          return;
         }
       }
       if (window.navigator.vibrate) window.navigator.vibrate(20);

@@ -31,7 +31,17 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
-      setUser(currentUser);
+      if (currentUser) {
+        const metadata = currentUser.metadata;
+        const isNewUser = metadata?.creationTime === metadata?.lastSignInTime;
+        if (isNewUser && !currentUser.emailVerified) {
+          setUser(null);
+        } else {
+          setUser(currentUser);
+        }
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 
