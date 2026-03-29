@@ -18,7 +18,13 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [themeIndex, setThemeIndex] = useState(0);
   
+  const [breakTimeLeft, setBreakTimeLeft] = useState(0);
+  const [totalBreakTime, setTotalBreakTime] = useState(0);
+  const [isBreakActive, setIsBreakActive] = useState(false);
   const [customMinutes, setCustomMinutes] = useState(25);
+  const [customBreakMinutes, setCustomBreakMinutes] = useState(5);
+  const [alarmVolume, setAlarmVolume] = useState(0.5);
+  const [isAlarmEnabled, setIsAlarmEnabled] = useState(true);
   const alarmAudioRef = useRef<HTMLAudioElement | null>(null);
   const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -26,12 +32,12 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
 
   useEffect(() => {
     const alarm = new Audio(ZEN_BOWL_URL);
-    alarm.volume = 0.5;
+    alarm.volume = alarmVolume;
     alarmAudioRef.current = alarm;
-  }, []);
+  }, [alarmVolume]);
 
   const playAlarmThrice = useCallback(() => {
-    if (!alarmAudioRef.current) return;
+    if (!alarmAudioRef.current || !isAlarmEnabled) return;
     let count = 1;
     const audio = alarmAudioRef.current;
     
@@ -80,6 +86,11 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             setIsActive(false);
+            // Start break timer if break time is set
+            if (totalBreakTime > 0) {
+              setIsBreakActive(true);
+              setBreakTimeLeft(totalBreakTime);
+            }
             playAlarmThrice();
             if (window.navigator.vibrate) window.navigator.vibrate([400, 100, 400]);
             return totalTime;
@@ -87,12 +98,37 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
           return prev - 1;
         });
       }, 1000);
+    } else if (isBreakActive && breakTimeLeft > 0) {
+      interval = setInterval(() => {
+        setBreakTimeLeft((prev) => {
+          if (prev <= 1) {
+            setIsBreakActive(false);
+            playAlarmThrice();
+            if (window.navigator.vibrate) window.navigator.vibrate([400, 100, 400]);
+            return 0; // Stay at 0 when break completes
+          }
+          return prev - 1;
+        });
+      }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isActive, timeLeft, totalTime, playAlarmThrice]);
+  }, [isActive, timeLeft, totalTime, isBreakActive, breakTimeLeft, totalBreakTime, playAlarmThrice]);
 
-  const toggleTimer = () => { setIsActive(!isActive); if (window.navigator.vibrate) window.navigator.vibrate(10); };
-  const resetTimer = () => { setIsActive(false); setTimeLeft(totalTime); if (window.navigator.vibrate) window.navigator.vibrate(5); };
+  const toggleTimer = () => { 
+    if (isBreakActive) {
+      setIsBreakActive(!isBreakActive);
+    } else {
+      setIsActive(!isActive);
+    }
+    if (window.navigator.vibrate) window.navigator.vibrate(10); 
+  };
+  const resetTimer = () => { 
+    setIsActive(false); 
+    setTimeLeft(totalTime); 
+    setIsBreakActive(false);
+    setBreakTimeLeft(0); // Reset break timer to 0 since break hasn't started
+    if (window.navigator.vibrate) window.navigator.vibrate(5); 
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -151,8 +187,15 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
               onClick={openPicker}
               className="text-[6.5rem] lg:text-[6rem] font-bold tracking-tighter leading-none tabular-nums text-white mb-2 active:scale-95 transition-transform focus:outline-none"
             >
-              {formatTime(timeLeft)}
+              {isBreakActive ? formatTime(breakTimeLeft) : formatTime(timeLeft)}
             </button>
+
+            {/* Break Indicator */}
+            {isBreakActive && (
+              <div className="text-[10px] uppercase tracking-widest font-bold opacity-60 text-white mb-2">
+                Break Time
+              </div>
+            )}
 
             {/* Pagination Dots */}
             <div className="flex items-center justify-center gap-2">
@@ -180,7 +223,7 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
             onClick={toggleTimer} 
             className="w-16 h-16 lg:w-16 lg:h-16 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-[0_10px_30px_rgba(255,255,255,0.1)] bg-white text-black"
           >
-            {isActive ? (
+            {(isActive || isBreakActive) ? (
                 <Pause size={24} fill="currentColor" />
             ) : (
                 <Play size={24} fill="currentColor" className="ml-1" />
@@ -196,50 +239,160 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing }) => {
         </div>
       </div>
 
-      {/* CUSTOMIZE OVERLAY */}
+      {/* TIMER SETUP OVERLAY */}
       {isCustomizing && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-8 animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 animate-in fade-in duration-500">
           <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl" onClick={() => setIsCustomizing(false)} />
-          <div className="relative w-full max-w-sm apple-blur rounded-[3rem] p-8 border border-white/10 shadow-2xl animate-in zoom-in-95 duration-500 overflow-hidden">
-            <h3 className="text-[10px] font-black mb-8 text-center opacity-30 uppercase tracking-[0.5em]">Set Duration</h3>
-            
-            <div className="flex items-center justify-center space-x-10 mb-10">
-              <button onClick={() => setCustomMinutes(m => Math.max(1, m - 1))} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white active:scale-90 transition-all"><Minus size={20} /></button>
-              <div className="text-center min-w-[80px]">
-                <div className="text-6xl font-light tabular-nums text-white leading-none">{customMinutes}</div>
-                <div className="text-[9px] uppercase tracking-widest font-bold opacity-20 mt-2">Mins</div>
+          <div className="relative w-full max-w-md apple-blur rounded-[3rem] p-8 border border-white/10 shadow-2xl animate-in zoom-in-95 duration-500 overflow-hidden max-h-[90vh] overflow-y-auto">
+            <h3 className="text-[10px] font-black mb-8 text-center opacity-30 uppercase tracking-[0.5em]">Timer Setup</h3>
+
+            {/* FOCUS TIME SECTION */}
+            <div className="mb-8">
+              <h4 className="text-[9px] font-bold mb-4 text-center opacity-60 uppercase tracking-widest">Focus Time</h4>
+              <div className="flex items-center justify-center space-x-10 mb-6">
+                <button onClick={() => setCustomMinutes(m => Math.max(1, m - 1))} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white active:scale-90 transition-all"><Minus size={20} /></button>
+                <div className="text-center min-w-[80px]">
+                  <div className="text-6xl font-light tabular-nums text-white leading-none">{customMinutes}</div>
+                  <div className="text-[9px] uppercase tracking-widest font-bold opacity-20 mt-2">Mins</div>
+                </div>
+                <button onClick={() => setCustomMinutes(m => Math.min(180, m + 1))} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white active:scale-90 transition-all"><Plus size={20} /></button>
               </div>
-              <button onClick={() => setCustomMinutes(m => Math.min(180, m + 1))} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white active:scale-90 transition-all"><Plus size={20} /></button>
+
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {[15, 25, 45, 60].map(min => (
+                  <button
+                    key={min}
+                    onClick={() => setCustomMinutes(min)}
+                    className={`py-4 rounded-2xl text-[9px] font-bold uppercase tracking-widest transition-all ${customMinutes === min ? 'bg-white text-black' : 'bg-white/5 text-white/40 border border-white/5'}`}
+                  >
+                    {min} MINS
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-10">
-              {[15, 25, 45, 60].map(min => (
-                <button 
-                  key={min}
-                  onClick={() => setCustomMinutes(min)}
-                  className={`py-4 rounded-2xl text-[9px] font-bold uppercase tracking-widest transition-all ${customMinutes === min ? 'bg-white text-black' : 'bg-white/5 text-white/40 border border-white/5'}`}
+            {/* BREAK TIME SECTION */}
+            <div className="mb-8">
+              <h4 className="text-[9px] font-bold mb-4 text-center opacity-60 uppercase tracking-widest">Break Time</h4>
+              <div className="flex items-center justify-center space-x-10 mb-6">
+                <button onClick={() => setCustomBreakMinutes(m => Math.max(0, m - 1))} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white active:scale-90 transition-all"><Minus size={20} /></button>
+                <div className="text-center min-w-[80px]">
+                  <div className="text-6xl font-light tabular-nums text-white leading-none">{customBreakMinutes}</div>
+                  <div className="text-[9px] uppercase tracking-widest font-bold opacity-20 mt-2">Mins</div>
+                </div>
+                <button onClick={() => setCustomBreakMinutes(m => Math.min(60, m + 1))} className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white active:scale-90 transition-all"><Plus size={20} /></button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {[0, 5, 10, 15].map(min => (
+                  <button
+                    key={min}
+                    onClick={() => setCustomBreakMinutes(min)}
+                    className={`py-4 rounded-2xl text-[9px] font-bold uppercase tracking-widest transition-all ${customBreakMinutes === min ? 'bg-white text-black' : 'bg-white/5 text-white/40 border border-white/5'}`}
+                  >
+                    {min === 0 ? 'No Break' : `${min} MINS`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* ALARM SETTINGS SECTION */}
+            <div className="mb-8">
+              <h4 className="text-[9px] font-bold mb-4 text-center opacity-60 uppercase tracking-widest">Alarm Settings</h4>
+
+              <div className="flex items-center justify-between mb-6">
+                <span className="text-white/80 text-sm">Enable Alarm</span>
+                <button
+                  onClick={() => setIsAlarmEnabled(!isAlarmEnabled)}
+                  className={`w-12 h-6 rounded-full transition-all duration-300 ${isAlarmEnabled ? 'bg-green-500' : 'bg-white/20'}`}
                 >
-                  {min} MINS
+                  <div className={`w-5 h-5 rounded-full bg-white transition-all duration-300 ${isAlarmEnabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
                 </button>
-              ))}
+              </div>
+
+              {isAlarmEnabled && (
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-white/80 text-sm">Volume</span>
+                    <span className="text-white/60 text-xs">{Math.round(alarmVolume * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={alarmVolume}
+                    onChange={(e) => setAlarmVolume(parseFloat(e.target.value))}
+                    className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
+                    style={{
+                      background: `linear-gradient(to right, ${currentTheme.color} 0%, ${currentTheme.color} ${alarmVolume * 100}%, rgba(255,255,255,0.1) ${alarmVolume * 100}%, rgba(255,255,255,0.1) 100%)`
+                    }}
+                  />
+                </div>
+              )}
+
+              <div className="text-center">
+                <div className="text-white/40 text-xs mb-2">Alarm Sound</div>
+                <div className="text-white/60 text-sm">Zen Bowl</div>
+              </div>
             </div>
 
-            <button 
-              onClick={() => { 
-                setTotalTime(customMinutes * 60); 
-                setTimeLeft(customMinutes * 60); 
-                setIsCustomizing(false); 
-              }} 
-              className="w-full py-5 rounded-[2rem] text-black text-[11px] font-bold uppercase tracking-widest transition-all active:scale-95 shadow-xl" 
-              style={{ backgroundColor: currentTheme.color }}
-            >
-              Set Focus
-            </button>
+            {/* ACTION BUTTONS */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsCustomizing(false)}
+                className="flex-1 py-5 rounded-[2rem] bg-white/5 border border-white/5 text-white/60 text-[11px] font-bold uppercase tracking-widest transition-all active:scale-95"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setTotalTime(customMinutes * 60);
+                  setTimeLeft(customMinutes * 60);
+                  setTotalBreakTime(customBreakMinutes * 60);
+                  setBreakTimeLeft(customBreakMinutes * 60);
+                  if (alarmAudioRef.current) {
+                    alarmAudioRef.current.volume = alarmVolume;
+                  }
+                  setIsCustomizing(false);
+                }}
+                className="flex-1 py-5 rounded-[2rem] text-black text-[11px] font-bold uppercase tracking-widest transition-all active:scale-95 shadow-xl"
+                style={{ backgroundColor: currentTheme.color }}
+              >
+                Start Timer
+              </button>
+            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };
 
 export default Timer;
+
+// Custom styles for the volume slider
+const style = document.createElement('style');
+style.textContent = `
+  .slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  
+  .slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+`;
+document.head.appendChild(style);

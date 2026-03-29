@@ -1,5 +1,5 @@
 
-export type AppTab = 'timer' | 'alarm' | 'stopwatch' | 'clock';
+export type AppTab = 'timer' | 'alarm' | 'stopwatch' | 'clock' | 'tasks' | 'appUsage';
 
 export interface FocusTheme {
   id: string;

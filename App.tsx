@@ -6,6 +6,7 @@ import {
   Timer as StopwatchIcon, 
   Globe as ClockIcon,
   User as UserIcon,
+  ListChecks as TasksIcon,
   Plus,
   LogOut
 } from 'lucide-react';
@@ -17,17 +18,22 @@ import Timer from './components/Timer';
 import Alarm from './components/Alarm';
 import Stopwatch from './components/Stopwatch';
 import Clock from './components/Clock';
+import Tasks from './components/Tasks';
+import AppUsageActivity from './components/AppUsageActivity';
 import Auth from './components/Auth';
 import Profile from './components/Profile';
 import { FOCUS_THEMES } from './constants';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AppTab>('timer');
+  const [previousTab, setPreviousTab] = useState<AppTab>('timer');
   const [user, setUser] = useState<firebase.User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showProfile, setShowProfile] = useState(false);
   const [isActionActive, setIsActionActive] = useState(false);
   const [isImmersiveLandscape, setIsImmersiveLandscape] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState<number>(Date.now());
+  const [currentSessionTime, setCurrentSessionTime] = useState<number>(0);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
@@ -54,12 +60,70 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // Session timer effect
+  useEffect(() => {
+    const startTime = Date.now();
+    setSessionStartTime(startTime);
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setCurrentSessionTime(now - startTime);
+    }, 1000);
+
+    // Save session when component unmounts (app closes)
+    return () => {
+      clearInterval(interval);
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+
+      // Only save sessions longer than 10 seconds to avoid accidental closes
+      if (duration > 10000) {
+        const sessionRecord = {
+          id: `session_${startTime}`,
+          startTime,
+          endTime,
+          duration,
+          date: new Date().toISOString(),
+        };
+
+        // Load existing history
+        const existingHistory = localStorage.getItem('appUsageSessions');
+        let history: any[] = [];
+        if (existingHistory) {
+          try {
+            history = JSON.parse(existingHistory);
+          } catch (error) {
+            console.error('Error parsing session history:', error);
+          }
+        }
+
+        // Add new session and save
+        history.push(sessionRecord);
+        localStorage.setItem('appUsageSessions', JSON.stringify(history));
+      }
+    };
+  }, []);
+
   const handleTabChange = useCallback((tab: AppTab) => {
     if (activeTab === tab) return;
+    setPreviousTab(activeTab);
     setActiveTab(tab);
     setIsActionActive(false);
     if (window.navigator.vibrate) window.navigator.vibrate(10);
   }, [activeTab]);
+
+  const openTasksTab = () => {
+    if (activeTab !== 'tasks') {
+      setPreviousTab(activeTab);
+      setActiveTab('tasks');
+      setShowProfile(false);
+    }
+  };
+
+  const exitTasks = () => {
+    setActiveTab(previousTab || 'timer');
+    setPreviousTab('timer');
+  };
 
   const handleSignOut = () => {
     auth.signOut();
@@ -77,10 +141,13 @@ const App: React.FC = () => {
       />
 
       {/* MATCHED TOP-RIGHT ACTIONS */}
-      {!isImmersiveLandscape && (
+      {!isImmersiveLandscape && activeTab !== 'tasks' && activeTab !== 'appUsage' && (
         <div className="fixed z-[100] top-12 right-8 flex items-center gap-3">
           <button onClick={() => setShowProfile(true)} className="w-10 h-10 rounded-full flex items-center justify-center text-white/40 bg-white/5 border border-white/5 active:scale-90 backdrop-blur-md">
             <UserIcon size={16} />
+          </button>
+          <button onClick={openTasksTab} className="w-10 h-10 rounded-full flex items-center justify-center text-white/40 bg-white/5 border border-white/5 active:scale-90 backdrop-blur-md">
+            <TasksIcon size={16} />
           </button>
           <button onClick={() => setIsActionActive(true)} className="w-10 h-10 rounded-full flex items-center justify-center text-white/40 bg-white/5 border border-white/5 active:scale-90 backdrop-blur-md">
             <Plus size={18} strokeWidth={2} />
@@ -108,12 +175,20 @@ const App: React.FC = () => {
         <div className={`absolute inset-0 ${activeTab === 'clock' ? 'block' : 'hidden'}`}>
           <Clock user={user} isAdding={isActionActive} setIsAdding={setIsActionActive} />
         </div>
+
+        <div className={`absolute inset-0 ${activeTab === 'tasks' ? 'block' : 'hidden'}`}>
+          <Tasks onExit={exitTasks} />
+        </div>
+
+        <div className={`absolute inset-0 ${activeTab === 'appUsage' ? 'block' : 'hidden'}`}>
+          <AppUsageActivity onClose={exitTasks} currentSessionTime={currentSessionTime} />
+        </div>
       </main>
 
-      {showProfile && <Profile onClose={() => setShowProfile(false)} />}
+      {showProfile && <Profile onClose={() => setShowProfile(false)} onOpenStock={() => { setShowProfile(false); setPreviousTab(activeTab); setActiveTab('appUsage'); }} />}
 
       {/* MATCHED BOTTOM NAVIGATION - Moved lower by reducing bottom padding and height */}
-      {!isImmersiveLandscape && (
+      {!isImmersiveLandscape && activeTab !== 'appUsage' && (
         <div className="w-full px-6 pb-3 safe-bottom z-[1000]">
           <nav className="mx-auto max-w-lg h-18 bg-black/40 backdrop-blur-[60px] rounded-[3rem] border border-white/[0.05] px-3 flex justify-around items-center shadow-2xl">
             <TabButton active={activeTab === 'clock'} onClick={() => handleTabChange('clock')} icon={<ClockIcon size={20} strokeWidth={1.5} />} label="WORLD" />

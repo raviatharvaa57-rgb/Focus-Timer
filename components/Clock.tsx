@@ -28,6 +28,61 @@ const WORLD_CITIES: WorldLocation[] = [
   { id: '18', name: 'Toronto', country: 'Canada', offset: -5, mood: 'Diverse' },
   { id: '19', name: 'Cape Town', country: 'South Africa', offset: 2, mood: 'Scenic' },
   { id: '20', name: 'Moscow', country: 'Russia', offset: 3, mood: 'Grand' },
+  { id: '21', name: 'Madrid', country: 'Spain', offset: 1, mood: 'Warm' },
+  { id: '22', name: 'Mexico City', country: 'Mexico', offset: -6, mood: 'Energetic' },
+  { id: '23', name: 'Istanbul', country: 'Turkey', offset: 3, mood: 'Historic' },
+  { id: '24', name: 'Buenos Aires', country: 'Argentina', offset: -3, mood: 'Passionate' },
+  { id: '25', name: 'Jakarta', country: 'Indonesia', offset: 7, mood: 'Lively' },
+  { id: '26', name: 'São Paulo', country: 'Brazil', offset: -3, mood: 'Vibrant' },
+  { id: '27', name: 'Lagos', country: 'Nigeria', offset: 1, mood: 'Dynamic' },
+  { id: '28', name: 'Nairobi', country: 'Kenya', offset: 3, mood: 'Wild' },
+  { id: '29', name: 'Singapore', country: 'Singapore', offset: 8, mood: 'Efficient' },
+  { id: '30', name: 'San Francisco', country: 'USA', offset: -8, mood: 'Innovative' },
+  { id: '31', name: 'Vancouver', country: 'Canada', offset: -8, mood: 'Relaxed' },
+  { id: '32', name: 'Seville', country: 'Spain', offset: 1, mood: 'Sun-soaked' },
+  { id: '33', name: 'Prague', country: 'Czech Republic', offset: 1, mood: 'Storybook' },
+  { id: '34', name: 'Vienna', country: 'Austria', offset: 1, mood: 'Elegant' },
+  { id: '35', name: 'Amsterdam', country: 'Netherlands', offset: 1, mood: 'Charming' },
+  { id: '36', name: 'Lisbon', country: 'Portugal', offset: 0, mood: 'Coastal' },
+  { id: '37', name: 'Chicago', country: 'USA', offset: -6, mood: 'Bold' },
+  { id: '38', name: 'Houston', country: 'USA', offset: -6, mood: 'Spacious' },
+  { id: '39', name: 'Mumbai', country: 'India', offset: 5.5, mood: 'Bustling' },
+  { id: '40', name: 'Karachi', country: 'Pakistan', offset: 5, mood: 'Vibrant' },
+  { id: '41', name: 'Seoul', country: 'South Korea', offset: 9, mood: 'Tech' },
+  { id: '42', name: 'Shanghai', country: 'China', offset: 8, mood: 'Futuristic' },
+  { id: '43', name: 'Beijing', country: 'China', offset: 8, mood: 'Historic' },
+  { id: '44', name: 'Sydney', country: 'Australia', offset: 11, mood: 'Sunny' },
+  { id: '45', name: 'Melbourne', country: 'Australia', offset: 11, mood: 'Stylish' },
+  { id: '46', name: 'Auckland', country: 'New Zealand', offset: 12, mood: 'Fresh' },
+  { id: '47', name: 'Copenhagen', country: 'Denmark', offset: 1, mood: 'Cool' },
+  { id: '48', name: 'Stockholm', country: 'Sweden', offset: 1, mood: 'Calm' },
+  { id: '49', name: 'Helsinki', country: 'Finland', offset: 2, mood: 'Breezy' },
+  { id: '50', name: 'Doha', country: 'Qatar', offset: 3, mood: 'Modern' },
+];
+
+const ALL_COUNTRIES = [
+  'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria','Azerbaijan',
+  'Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi',
+  'Cabo Verde','Cambodia','Cameroon','Canada','Central African Republic','Chad','Chile','China','Colombia','Comoros','Congo, Republic of the','Congo, Democratic Republic of the','Costa Rica','Côte d’Ivoire','Croatia','Cuba','Cyprus','Czech Republic',
+  'Denmark','Djibouti','Dominica','Dominican Republic','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia',
+  'Fiji','Finland','France',
+  'Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana',
+  'Haiti','Honduras','Hungary',
+  'Iceland','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy',
+  'Jamaica','Japan','Jordan',
+  'Kazakhstan','Kenya','Kiribati','Korea, North','Korea, South','Kosovo','Kuwait','Kyrgyzstan',
+  'Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg',
+  'Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar',
+  'Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Macedonia','Norway',
+  'Oman',
+  'Pakistan','Palau','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal',
+  'Qatar',
+  'Romania','Russia','Rwanda',
+  'Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','Spain','Sri Lanka','Sudan','Sudan, South','Suriname','Sweden','Switzerland','Syria',
+  'Taiwan','Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Turkey','Turkmenistan','Tuvalu',
+  'Uganda','Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay','Uzbekistan',
+  'Vanuatu','Vatican City','Venezuela','Vietnam',
+  'Yemen','Zambia','Zimbabwe'
 ];
 
 interface ClockProps {
@@ -111,6 +166,7 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [countryFilter, setCountryFilter] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<WorldLocation[]>([]);
 
@@ -144,30 +200,68 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
   }, [user.uid]);
 
   const handleSearch = () => {
-    if (!searchQuery.trim()) {
+    if (!searchQuery.trim() && !countryFilter) {
       setSearchResults([]);
       return;
     }
+
     setIsSearching(true);
     
     // Simulate a snappy local search delay for smooth UI feel
     setTimeout(() => {
-      const results = WORLD_CITIES.filter(city => 
-        city.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        city.country?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      let results = WORLD_CITIES;
+
+      if (countryFilter) {
+        results = results.filter(city => city.country?.toLowerCase() === countryFilter.toLowerCase());
+      }
+
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        results = results.filter(city => 
+          city.name.toLowerCase().includes(query) || 
+          city.country?.toLowerCase().includes(query)
+        );
+
+        if (results.length === 0) {
+          const countryMatch = ALL_COUNTRIES.find(country =>
+            country.toLowerCase().includes(query)
+          );
+
+          if (countryMatch) {
+            results = [{
+              id: `country-${countryMatch}`,
+              name: `Country: ${countryMatch}`,
+              country: countryMatch,
+              offset: 0,
+              mood: 'Country Lookup',
+            }];
+          }
+        }
+      }
+
+      // If user selected a country and no matching city is found, show placeholder for that country
+      if (countryFilter && results.length === 0) {
+        results = [{
+          id: `country-${countryFilter}`,
+          name: `Country: ${countryFilter}`,
+          country: countryFilter,
+          offset: 0,
+          mood: 'Country Lookup',
+        }];
+      }
+
       setSearchResults(results);
       setIsSearching(false);
     }, 200);
   };
 
-  // Trigger search on typing
+  // Trigger search on typing and country select
   useEffect(() => {
     const timer = setTimeout(() => {
       handleSearch();
     }, 150);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, countryFilter]);
 
   const addLocation = async (loc: WorldLocation) => {
     try {
@@ -201,7 +295,7 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
   const formatTimeMain = (date: Date) => {
     const hours = date.getHours() % 12 || 12;
     const mins = date.getMinutes().toString().padStart(2, '0');
-    return `${hours} ${mins}`;
+    return `${hours}:${mins}`;
   };
 
   const formatAMPM = (date: Date) => date.getHours() >= 12 ? 'PM' : 'AM';
@@ -331,6 +425,18 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
             </div>
             
             <div className="space-y-6">
+               <div className="relative">
+                 <select
+                   value={countryFilter}
+                   onChange={e => setCountryFilter(e.target.value)}
+                   className="w-full bg-white/5 rounded-2xl py-4 px-4 text-sm font-medium focus:outline-none border border-white/5 text-white"
+                 >
+                   <option value="" className="text-black">All Countries</option>
+                   {ALL_COUNTRIES.map(country => (
+                     <option key={country} value={country} className="text-black">{country}</option>
+                   ))}
+                 </select>
+               </div>
                <div className="relative">
                  <input 
                    type="text"

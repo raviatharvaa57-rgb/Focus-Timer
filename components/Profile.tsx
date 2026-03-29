@@ -5,9 +5,10 @@ import { User, Mail, Trash2, X, Loader2, AlertTriangle } from 'lucide-react';
 
 interface ProfileProps {
   onClose: () => void;
+  onOpenStock: () => void;
 }
 
-const Profile: React.FC<ProfileProps> = ({ onClose }) => {
+const Profile: React.FC<ProfileProps> = ({ onClose, onOpenStock }) => {
   const [profile, setProfile] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState('');
@@ -107,6 +108,10 @@ const Profile: React.FC<ProfileProps> = ({ onClose }) => {
                 <span className="text-sm font-medium text-white/80 truncate w-48">{profile?.email || auth.currentUser?.email}</span>
               </div>
             </div>
+
+            <button onClick={() => { onOpenStock(); onClose(); }} className="w-full py-3 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest text-white/40 transition-all">
+              Session History
+            </button>
 
             {isEditing ? (
               <div className="space-y-3 animate-in slide-in-from-top-2">
