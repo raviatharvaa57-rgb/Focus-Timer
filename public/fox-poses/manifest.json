@@ -1,0 +1,31 @@
+{
+  "greetingRotation": [
+    "greeting-sign.png",
+    "focus-timer-page.png",
+    "button-confirm.png",
+    "local-time-page.png",
+    "button-star.png",
+    "button-dance.png"
+  ],
+  "namedPoses": {
+    "achievementCelebration": "achievement-celebration.png",
+    "greetingSign": "greeting-sign.png",
+    "pauseRefresh": "pause-refresh.png",
+    "lightMode": "light-mode.png",
+    "focusMode": "focus-mode.png",
+    "resetReady": "reset-ready.png",
+    "sessionRefresh": "session-refresh.png",
+    "buttonStar": "button-star.png",
+    "thinking": "thinking.png",
+    "focusTimerPage": "focus-timer-page.png",
+    "buttonConfirm": "button-confirm.png",
+    "localTimePage": "local-time-page.png",
+    "victoryDance": "victory-dance.png",
+    "levelUp": "level-up.png",
+    "alarmPage": "alarm-page.png",
+    "stopwatchPage": "stopwatch-page.png",
+    "buttonDance": "button-dance.png",
+    "darkMode": "dark-mode.png",
+    "nightFocus": "night-focus.png"
+  }
+}

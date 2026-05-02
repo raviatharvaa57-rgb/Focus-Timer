@@ -1,48 +1,99 @@
-import React, { useState, useCallback } from 'react';
-
-type Task = {
-  id: string;
-  text: string;
-  completed: boolean;
-  isEditing?: boolean;
-};
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { TaskItem } from '../types';
 
 interface TasksProps {
   onExit: () => void;
+  onTasksChange: (tasks: TaskItem[]) => void;
 }
 
-const Tasks: React.FC<TasksProps> = ({ onExit }) => {
-  const [tasks, setTasks] = useState<Task[]>([]);
+const TASKS_STORAGE_KEY = 'focusTimerTasks';
+
+const Tasks: React.FC<TasksProps> = ({ onExit, onTasksChange }) => {
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [input, setInput] = useState('');
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const tasksRef = useRef<TaskItem[]>([]);
+
+  const persistTasks = useCallback((nextTasks: TaskItem[]) => {
+    tasksRef.current = nextTasks;
+    localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(nextTasks));
+    setTasks(nextTasks);
+    onTasksChange(nextTasks);
+  }, [onTasksChange]);
+
+  const updateTasks = useCallback((updater: (previousTasks: TaskItem[]) => TaskItem[]) => {
+    const nextTasks = updater(tasksRef.current);
+    persistTasks(nextTasks);
+  }, [persistTasks]);
+
+  useEffect(() => {
+    const savedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
+    if (!savedTasks) {
+      return;
+    }
+
+    try {
+      const parsedTasks = JSON.parse(savedTasks) as TaskItem[];
+      persistTasks(parsedTasks);
+    } catch (error) {
+      console.error('Error loading saved tasks:', error);
+    }
+  }, [persistTasks]);
+
+  useEffect(() => {
+    onTasksChange(tasksRef.current);
+  }, [onTasksChange]);
+
+  useEffect(() => {
+    const persistCurrentTasks = () => {
+      localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasksRef.current));
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        persistCurrentTasks();
+      }
+    };
+
+    window.addEventListener('pagehide', persistCurrentTasks);
+    window.addEventListener('beforeunload', persistCurrentTasks);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('pagehide', persistCurrentTasks);
+      window.removeEventListener('beforeunload', persistCurrentTasks);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      persistCurrentTasks();
+    };
+  }, []);
 
   const addTask = useCallback(() => {
     const trimmed = input.trim();
     if (!trimmed) return;
 
-    setTasks(prev => [
+    updateTasks(prev => [
       ...prev,
       { id: crypto.randomUUID(), text: trimmed, completed: false }
     ]);
     setInput('');
-  }, [input]);
+  }, [input, updateTasks]);
 
   const toggleComplete = (id: string) => {
-    setTasks(prev => prev.map(task => task.id === id ? { ...task, completed: !task.completed } : task));
+    updateTasks(prev => prev.map(task => task.id === id ? { ...task, completed: !task.completed } : task));
   };
 
   const startEditing = (id: string) => {
-    setTasks(prev => prev.map(task => task.id === id ? { ...task, isEditing: true } : { ...task, isEditing: false }));
+    updateTasks(prev => prev.map(task => task.id === id ? { ...task, isEditing: true } : { ...task, isEditing: false }));
   };
 
   const saveTask = (id: string, newText: string) => {
     const trimmed = newText.trim();
     if (!trimmed) return;
-    setTasks(prev => prev.map(task => task.id === id ? { ...task, text: trimmed, isEditing: false } : task));
+    updateTasks(prev => prev.map(task => task.id === id ? { ...task, text: trimmed, isEditing: false } : task));
   };
 
   const removeTask = (id: string) => {
-    setTasks(prev => prev.filter(task => task.id !== id));
+    updateTasks(prev => prev.filter(task => task.id !== id));
   };
 
   const onDragStart = (id: string) => {
@@ -55,7 +106,7 @@ const Tasks: React.FC<TasksProps> = ({ onExit }) => {
 
   const onDrop = (dropId: string) => {
     if (!draggedTaskId || draggedTaskId === dropId) return;
-    setTasks(prev => {
+    updateTasks(prev => {
       const fromIndex = prev.findIndex(task => task.id === draggedTaskId);
       const toIndex = prev.findIndex(task => task.id === dropId);
       if (fromIndex === -1 || toIndex === -1) return prev;
@@ -65,6 +116,11 @@ const Tasks: React.FC<TasksProps> = ({ onExit }) => {
       return next;
     });
     setDraggedTaskId(null);
+  };
+
+  const handleExit = () => {
+    persistTasks(tasksRef.current);
+    onExit();
   };
 
   return (
@@ -82,7 +138,7 @@ const Tasks: React.FC<TasksProps> = ({ onExit }) => {
       </div>
 
       <div className="mb-5">
-        <button onClick={onExit} className="w-full py-3 rounded-xl bg-orange-500/20 text-orange-100 border border-orange-300 hover:bg-orange-500/40 transition">
+        <button onClick={handleExit} className="w-full py-3 rounded-xl bg-orange-500/20 text-orange-100 border border-orange-300 hover:bg-orange-500/40 transition">
           Exit
         </button>
       </div>
@@ -107,7 +163,7 @@ const Tasks: React.FC<TasksProps> = ({ onExit }) => {
               <input
                 autoFocus
                 value={task.text}
-                onChange={e => setTasks(prev => prev.map(t => t.id === task.id ? { ...t, text: e.target.value } : t))}
+                onChange={e => updateTasks(prev => prev.map(t => t.id === task.id ? { ...t, text: e.target.value } : t))}
                 onBlur={() => saveTask(task.id, task.text)}
                 onKeyDown={e => e.key === 'Enter' && saveTask(task.id, task.text)}
                 className="flex-1 p-2 rounded-lg bg-white/10 border border-white/20 text-white outline-none"

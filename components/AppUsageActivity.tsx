@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { X, Clock, History, RefreshCcw } from 'lucide-react';
 
 interface SessionRecord {
@@ -12,24 +12,11 @@ interface SessionRecord {
 interface AppUsageProps {
   onClose: () => void;
   currentSessionTime: number; // in milliseconds
+  sessionHistory: SessionRecord[];
+  onClearHistory: () => void;
 }
 
-const AppUsageActivity: React.FC<AppUsageProps> = ({ onClose, currentSessionTime }) => {
-  const [sessionHistory, setSessionHistory] = useState<SessionRecord[]>([]);
-
-  useEffect(() => {
-    // Load session history from localStorage
-    const savedHistory = localStorage.getItem('appUsageSessions');
-    if (savedHistory) {
-      try {
-        const parsed = JSON.parse(savedHistory);
-        setSessionHistory(parsed);
-      } catch (error) {
-        console.error('Error loading session history:', error);
-      }
-    }
-  }, []);
-
+const AppUsageActivity: React.FC<AppUsageProps> = ({ onClose, currentSessionTime, sessionHistory, onClearHistory }) => {
   const formatDuration = (milliseconds: number): string => {
     const totalSeconds = Math.floor(milliseconds / 1000);
     const hours = Math.floor(totalSeconds / 3600);
@@ -57,8 +44,7 @@ const AppUsageActivity: React.FC<AppUsageProps> = ({ onClose, currentSessionTime
   };
 
   const clearHistory = () => {
-    setSessionHistory([]);
-    localStorage.removeItem('appUsageSessions');
+    onClearHistory();
   };
 
   const { hours, minutes, seconds } = formatCurrentTime(currentSessionTime);

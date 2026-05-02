@@ -8,6 +8,12 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        proxy: {
+          '/reflection': {
+            target: `http://127.0.0.1:${env.PORT || 8787}`,
+            changeOrigin: true,
+          },
+        },
       },
       plugins: [react()],
       define: {

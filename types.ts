@@ -1,6 +1,29 @@
 
 export type AppTab = 'timer' | 'alarm' | 'stopwatch' | 'clock' | 'tasks' | 'appUsage';
 
+export interface TaskItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  isEditing?: boolean;
+}
+
+export interface AchievementBadge {
+  id: string;
+  title: string;
+  description: string;
+  unlockedAt: string;
+  category: 'dailyGoal' | 'timer';
+}
+
+export interface AchievementPreferences {
+  showGoalPrompt: boolean;
+  showDailyGoalCompletePopup: boolean;
+  showTimerCompletionPopup: boolean;
+  showNotificationPermissionPrompt: boolean;
+  notificationsEnabled: boolean;
+}
+
 export interface FocusTheme {
   id: string;
   name: string;

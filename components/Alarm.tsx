@@ -13,9 +13,12 @@ interface AlarmProps {
   user: firebase.User;
   isAdding: boolean;
   setIsAdding: (val: boolean) => void;
+  canSendNotifications: boolean;
+  onSendNotification: (title: string, body: string, playSound?: boolean) => void;
+  isDarkMode: boolean;
 }
 
-const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
+const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding, canSendNotifications, onSendNotification, isDarkMode }) => {
   const [alarms, setAlarms] = useState<AlarmItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [newLabel, setNewLabel] = useState('');
@@ -94,6 +97,13 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
       if (matchedAlarm) {
         setFiringAlarm(matchedAlarm);
         playAlarmSound();
+        if (canSendNotifications) {
+          onSendNotification(
+            matchedAlarm.label || 'Alarm',
+            `It is ${matchedAlarm.time}. Your alarm is ringing.`,
+            false,
+          );
+        }
         lastTriggeredRef.current = currentTimeStr;
         if (window.navigator.vibrate) window.navigator.vibrate([500, 200, 500, 200, 500]);
         
@@ -107,7 +117,7 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [alarms, user.uid, playAlarmSound]);
+  }, [alarms, user.uid, playAlarmSound, canSendNotifications, onSendNotification]);
 
   const toggleAlarm = async (id: string, currentStatus: boolean) => {
     try {
@@ -211,24 +221,28 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
     const togglePeriod = () => setPickerPeriod(prev => prev === 'AM' ? 'PM' : 'AM');
 
     return (
-      <div className="flex items-center justify-center space-x-4 py-6 bg-white/5 rounded-[2.5rem] border border-white/5 shadow-inner">
+      <div className={`flex items-center justify-center space-x-4 py-6 rounded-[2.5rem] shadow-inner transition-colors duration-700 ${
+        isDarkMode ? 'bg-white/5 border border-white/5' : 'bg-slate-50 border border-slate-200'
+      }`}>
         <div className="flex flex-col items-center">
-          <button onClick={incrementHour} className="p-2 text-white/20 hover:text-white transition-colors"><ChevronUp size={20}/></button>
+          <button onClick={incrementHour} className={`p-2 transition-colors ${isDarkMode ? 'text-white/20 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}><ChevronUp size={20}/></button>
           <div className="text-5xl font-extralight tabular-nums py-2 w-16 text-center">{pickerHour}</div>
-          <button onClick={decrementHour} className="p-2 text-white/20 hover:text-white transition-colors"><ChevronDown size={20}/></button>
+          <button onClick={decrementHour} className={`p-2 transition-colors ${isDarkMode ? 'text-white/20 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}><ChevronDown size={20}/></button>
           <span className="text-[8px] uppercase tracking-widest opacity-20 font-black">Hour</span>
         </div>
         <div className="text-4xl font-thin opacity-20 pb-4">:</div>
         <div className="flex flex-col items-center">
-          <button onClick={incrementMin} className="p-2 text-white/20 hover:text-white transition-colors"><ChevronUp size={20}/></button>
+          <button onClick={incrementMin} className={`p-2 transition-colors ${isDarkMode ? 'text-white/20 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}><ChevronUp size={20}/></button>
           <div className="text-5xl font-extralight tabular-nums py-2 w-20 text-center">{pickerMinute.toString().padStart(2, '0')}</div>
-          <button onClick={decrementMin} className="p-2 text-white/20 hover:text-white transition-colors"><ChevronDown size={20}/></button>
+          <button onClick={decrementMin} className={`p-2 transition-colors ${isDarkMode ? 'text-white/20 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}><ChevronDown size={20}/></button>
           <span className="text-[8px] uppercase tracking-widest opacity-20 font-black">Min</span>
         </div>
         <div className="flex flex-col items-center ml-4">
-          <button onClick={togglePeriod} className="p-2 text-white/20 hover:text-white transition-colors"><ChevronUp size={20}/></button>
-          <div onClick={togglePeriod} className="text-2xl font-bold py-2 px-3 bg-white/10 rounded-xl transition-all w-16 text-center cursor-pointer">{pickerPeriod}</div>
-          <button onClick={togglePeriod} className="p-2 text-white/20 hover:text-white transition-colors"><ChevronDown size={20}/></button>
+          <button onClick={togglePeriod} className={`p-2 transition-colors ${isDarkMode ? 'text-white/20 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}><ChevronUp size={20}/></button>
+          <div onClick={togglePeriod} className={`text-2xl font-bold py-2 px-3 rounded-xl transition-all w-16 text-center cursor-pointer ${
+            isDarkMode ? 'bg-white/10' : 'bg-white border border-slate-200'
+          }`}>{pickerPeriod}</div>
+          <button onClick={togglePeriod} className={`p-2 transition-colors ${isDarkMode ? 'text-white/20 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}><ChevronDown size={20}/></button>
           <span className="text-[8px] uppercase tracking-widest opacity-20 font-black">Period</span>
         </div>
       </div>
@@ -238,7 +252,7 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
   const showModal = isAdding || !!editingAlarm;
 
   return (
-    <div className="h-full flex flex-col bg-black px-6 overflow-hidden">
+    <div className={`h-full flex flex-col px-6 overflow-hidden transition-colors duration-700 ${isDarkMode ? 'bg-[#0f172a] text-white' : 'bg-white text-slate-900'}`}>
       <header className="flex justify-between items-center pt-16 pb-6 shrink-0 relative">
         <h1 className="text-4xl font-bold tracking-tight">Alarm</h1>
       </header>
@@ -246,7 +260,7 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
       <div className="flex-1 overflow-y-auto hide-scrollbar space-y-4 pb-48 px-2">
         {loading ? (
           <div className="flex-1 flex items-center justify-center py-20">
-            <Loader2 className="animate-spin text-white/10" size={32} />
+            <Loader2 className={`animate-spin ${isDarkMode ? 'text-white/10' : 'text-slate-300'}`} size={32} />
           </div>
         ) : (
           <>
@@ -255,17 +269,21 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
               return (
                 <div 
                   key={alarm.id} 
-                  className={`apple-blur p-8 rounded-[2.5rem] border border-white/5 flex items-center justify-between transition-all duration-500 hover:border-white/10 ${alarm.active ? 'opacity-100' : 'opacity-40 scale-[0.98]'}`}
+                  className={`p-8 rounded-[2.5rem] flex items-center justify-between transition-all duration-500 ${
+                    isDarkMode
+                      ? 'apple-blur border border-white/5 hover:border-white/10'
+                      : 'bg-slate-50 border border-slate-200 hover:border-slate-300 shadow-sm'
+                  } ${alarm.active ? 'opacity-100' : 'opacity-40 scale-[0.98]'}`}
                 >
                   <div className="flex flex-col">
                     <div className="flex items-baseline mb-1">
-                      <span className="text-5xl font-extralight tracking-tighter tabular-nums text-white">
+                      <span className={`text-5xl font-extralight tracking-tighter tabular-nums ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
                         {display.h12}:{display.m}
                       </span>
-                      <span className="text-base font-bold tracking-widest text-zinc-500 uppercase ml-2">{display.period}</span>
+                      <span className={`text-base font-bold tracking-widest uppercase ml-2 ${isDarkMode ? 'text-zinc-500' : 'text-slate-500'}`}>{display.period}</span>
                     </div>
                     <div className="flex flex-col mt-2">
-                       <span className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] mb-1">{alarm.label}</span>
+                       <span className={`text-[10px] font-black uppercase tracking-[0.2em] mb-1 ${isDarkMode ? 'text-zinc-500' : 'text-slate-500'}`}>{alarm.label}</span>
                        <span className="text-[9px] text-orange-500 font-black uppercase tracking-[0.15em]">
                          {formatDaysDisplay(alarm.days)}
                        </span>
@@ -275,7 +293,9 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
                     <div className="flex flex-col space-y-3">
                       <button 
                         onClick={() => toggleAlarm(alarm.id, alarm.active)}
-                        className={`w-14 h-8 rounded-full relative transition-all duration-500 flex items-center px-1 shadow-inner ${alarm.active ? 'bg-orange-500' : 'bg-zinc-800'}`}
+                        className={`w-14 h-8 rounded-full relative transition-all duration-500 flex items-center px-1 shadow-inner ${
+                          alarm.active ? 'bg-orange-500' : isDarkMode ? 'bg-zinc-800' : 'bg-slate-300'
+                        }`}
                       >
                         <div className={`w-6 h-6 bg-white rounded-full shadow-lg transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${alarm.active ? 'translate-x-6' : 'translate-x-0'}`} />
                       </button>
@@ -309,9 +329,11 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
 
       {showModal && (
         <div className="fixed inset-0 z-[2000] flex items-end justify-center animate-in fade-in duration-300 px-4 pb-4">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={closeDialog} />
-          <div className="relative w-full max-w-lg apple-blur rounded-[3.5rem] p-8 border border-white/10 shadow-2xl animate-in slide-in-from-bottom-full duration-500 ease-out pb-12">
-            <h3 className="text-[11px] font-black mb-8 text-center opacity-40 uppercase tracking-[0.5em]">
+          <div className={`absolute inset-0 backdrop-blur-sm ${isDarkMode ? 'bg-black/80' : 'bg-slate-200/70'}`} onClick={closeDialog} />
+          <div className={`relative w-full max-w-lg rounded-[3.5rem] p-8 shadow-2xl animate-in slide-in-from-bottom-full duration-500 ease-out pb-12 transition-colors duration-700 ${
+            isDarkMode ? 'apple-blur border border-white/10' : 'bg-white border border-slate-200 text-slate-900'
+          }`}>
+            <h3 className={`text-[11px] font-black mb-8 text-center opacity-40 uppercase tracking-[0.5em] ${isDarkMode ? 'text-white' : 'text-slate-500'}`}>
               {editingAlarm ? 'Edit Alarm' : 'Add New Alarm'}
             </h3>
             <div className="space-y-8">
@@ -323,7 +345,11 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
                   placeholder="e.g. GYM"
                   value={newLabel}
                   onChange={e => setNewLabel(e.target.value)}
-                  className="w-full bg-white/5 rounded-2xl py-4 px-6 text-sm font-medium focus:outline-none border border-white/5 text-white placeholder:text-white/10"
+                  className={`w-full rounded-2xl py-4 px-6 text-sm font-medium focus:outline-none transition-colors duration-700 ${
+                    isDarkMode
+                      ? 'bg-white/5 border border-white/5 text-white placeholder:text-white/10'
+                      : 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400'
+                  }`}
                 />
               </div>
               <div className="space-y-3">
@@ -336,7 +362,9 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
                       className={`flex-1 aspect-square rounded-xl text-[10px] font-black transition-all active:scale-90 ${
                         selectedDays.includes(FULL_DAYS[idx]) 
                           ? 'bg-orange-500 text-black shadow-[0_0_20px_rgba(249,115,22,0.3)]' 
-                          : 'bg-white/5 text-white/20'
+                          : isDarkMode
+                            ? 'bg-white/5 text-white/20'
+                            : 'bg-slate-100 text-slate-400 border border-slate-200'
                       }`}
                     >
                       {day}
@@ -347,7 +375,9 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding }) => {
               <div className="flex space-x-3 pt-4">
                 <button 
                   onClick={closeDialog} 
-                  className="flex-1 py-5 rounded-[2rem] bg-white/5 font-black uppercase tracking-widest text-[10px] text-white/30 active:scale-95 transition-all"
+                  className={`flex-1 py-5 rounded-[2rem] font-black uppercase tracking-widest text-[10px] active:scale-95 transition-all ${
+                    isDarkMode ? 'bg-white/5 text-white/30' : 'bg-slate-100 text-slate-600 border border-slate-200'
+                  }`}
                 >
                   Cancel
                 </button>

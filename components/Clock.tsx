@@ -89,6 +89,7 @@ interface ClockProps {
   user: firebase.User;
   isAdding: boolean;
   setIsAdding: (val: boolean) => void;
+  isDarkMode: boolean;
 }
 
 const LocationItem: React.FC<{
@@ -96,7 +97,8 @@ const LocationItem: React.FC<{
   time: Date;
   theme: any;
   onDelete: (id: string) => void;
-}> = ({ loc, time, theme, onDelete }) => {
+  isDarkMode: boolean;
+}> = ({ loc, time, theme, onDelete, isDarkMode }) => {
   const getFormattedLocalTime = (baseTime: Date, offset: number) => {
     const utc = baseTime.getTime() + (baseTime.getTimezoneOffset() * 60000);
     const targetDate = new Date(utc + (3600000 * offset));
@@ -127,28 +129,36 @@ const LocationItem: React.FC<{
 
   return (
     <div className="relative overflow-hidden rounded-[2.5rem] mb-3 group">
-      <div className="relative apple-blur py-6 px-7 border border-white/5 flex items-center justify-between transition-all duration-300">
+      <div className={`relative py-6 px-7 flex items-center justify-between transition-all duration-300 ${
+        isDarkMode
+          ? 'apple-blur border border-white/5'
+          : 'bg-slate-50 border border-slate-200 shadow-sm'
+      }`}>
         <div className="flex flex-col">
           <div className="flex items-center space-x-2 mb-1.5">
-            <Globe size={10} className="text-white/20" />
-            <p className="text-[10px] uppercase tracking-[0.3em] text-white/50 font-black">{loc.name}</p>
+            <Globe size={10} className={isDarkMode ? 'text-white/20' : 'text-slate-400'} />
+            <p className={`text-[10px] uppercase tracking-[0.3em] font-black ${isDarkMode ? 'text-white/50' : 'text-slate-700'}`}>{loc.name}</p>
             {loc.mood && (
               <span className="text-[8px] bg-orange-500/10 px-2.5 py-1 rounded-full text-orange-500/50 uppercase tracking-widest font-black">
                 {loc.mood}
               </span>
             )}
           </div>
-          <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest">
+          <p className={`text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-white/20' : 'text-slate-500'}`}>
             {dayLabel} • {diffLabel}
           </p>
         </div>
         <div className="flex items-center space-x-5">
-          <p className={`text-3xl font-light tracking-tight tabular-nums ${theme.textColor}`}>
+          <p className={`text-3xl font-light tracking-tight tabular-nums ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
             {getFormattedLocalTime(time, loc.offset)}
           </p>
           <button 
             onClick={() => onDelete(loc.id)}
-            className="w-10 h-10 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/20 hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-90"
+            className={`w-10 h-10 rounded-full flex items-center justify-center hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-90 ${
+              isDarkMode
+                ? 'bg-white/5 border border-white/5 text-white/20'
+                : 'bg-white border border-slate-200 text-slate-400'
+            }`}
           >
             <Trash2 size={16} />
           </button>
@@ -158,7 +168,7 @@ const LocationItem: React.FC<{
   );
 };
 
-const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
+const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding, isDarkMode }) => {
   const [time, setTime] = useState(new Date());
   const [themeIndex, setThemeIndex] = useState(0);
   const [locations, setLocations] = useState<WorldLocation[]>([]);
@@ -317,13 +327,16 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
 
   return (
     <div 
-      className={`h-full flex flex-col items-center pt-8 pb-32 transition-all duration-1000 bg-gradient-to-b ${currentTheme.bgGradient} ${currentTheme.textColor} overflow-hidden`}
+      className={`h-full flex flex-col items-center pt-8 pb-32 transition-all duration-1000 overflow-hidden ${
+        isDarkMode ? 'bg-[#0f172a] text-white' : 'bg-white text-slate-900'
+      }`}
     >
+      <div className={`absolute inset-0 transition-opacity duration-700 ${isDarkMode ? `bg-gradient-to-b ${currentTheme.bgGradient} opacity-25` : 'bg-gradient-to-b from-slate-100 via-white to-white opacity-100'}`} />
       <div className="w-full flex flex-col items-center shrink-0 pt-8">
         <header className="w-full flex justify-between items-center mb-6 px-10 animate-in fade-in slide-in-from-top-2 transition-transform duration-500 ease-out">
           <div className="flex flex-col">
-            <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-xl">World</h1>
-            <p className="text-[10px] uppercase tracking-[0.4em] opacity-30 font-black mt-1" style={{ color: currentTheme.dotColor.replace('bg-', 'text-') }}>{currentTheme.name}</p>
+            <h1 className={`text-4xl font-bold tracking-tight ${isDarkMode ? 'text-white drop-shadow-xl' : 'text-slate-900'}`}>Local Time</h1>
+            <p className={`text-[10px] uppercase tracking-[0.4em] font-black mt-1 ${isDarkMode ? 'text-white/30' : 'text-slate-500'}`}>{currentTheme.name}</p>
           </div>
         </header>
 
@@ -336,13 +349,13 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
           }`}
         >
           <svg className="absolute w-full h-full -rotate-90 transform overflow-visible" viewBox="0 0 200 200">
-            <circle cx="100" cy="100" r="90" className={`${currentTheme.ringColor} fill-transparent transition-all duration-700`} strokeWidth="0.5" />
+            <circle cx="100" cy="100" r="90" className={`${isDarkMode ? currentTheme.ringColor : 'text-slate-300'} fill-transparent transition-all duration-700`} strokeWidth="0.5" />
             <circle 
               cx="100" cy="100" r="90" 
               stroke="currentColor" strokeWidth="1.5" 
               strokeDasharray="1" strokeDashoffset={1 - progress} 
               pathLength="1" 
-              className={`fill-transparent transition-all duration-300 linear ${currentTheme.accentColor}`} 
+              className={`fill-transparent transition-all duration-300 linear ${isDarkMode ? currentTheme.accentColor : 'text-slate-700'}`} 
               strokeLinecap="round" 
               style={{ filter: `drop-shadow(0 0 10px currentColor)` }}
             />
@@ -350,15 +363,15 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
           {[...Array(12)].map((_, i) => (
             <div 
               key={i} 
-              className={`absolute w-[1px] h-3 transition-colors duration-700 ${currentTheme.markerColor}`} 
+              className={`absolute w-[1px] h-3 transition-colors duration-700 ${isDarkMode ? currentTheme.markerColor : 'bg-slate-300'}`} 
               style={{ transform: `rotate(${i * 30}deg) translateY(-85px)` }} 
             />
           ))}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className={`absolute bottom-1/2 w-[2px] h-14 rounded-full origin-bottom transition-all duration-500 ${currentTheme.handColor}`} style={{ transform: `rotate(${hourDegrees}deg)` }} />
-            <div className={`absolute bottom-1/2 w-[1.5px] h-20 rounded-full origin-bottom transition-all duration-500 ${currentTheme.handColor} opacity-60`} style={{ transform: `rotate(${minuteDegrees}deg)` }} />
-            <div className={`absolute bottom-1/2 w-[1px] h-24 rounded-full origin-bottom shadow-sm transition-all duration-500 ${currentTheme.secondHandColor}`} style={{ transform: `rotate(${secondDegrees}deg)` }} />
-            <div className={`absolute w-2 h-2 rounded-full z-10 transition-colors duration-500 ${currentTheme.handColor}`} />
+            <div className={`absolute bottom-1/2 w-[2px] h-14 rounded-full origin-bottom transition-all duration-500 ${isDarkMode ? currentTheme.handColor : 'bg-slate-900'}`} style={{ transform: `rotate(${hourDegrees}deg)` }} />
+            <div className={`absolute bottom-1/2 w-[1.5px] h-20 rounded-full origin-bottom transition-all duration-500 ${isDarkMode ? `${currentTheme.handColor} opacity-60` : 'bg-slate-700 opacity-70'}`} style={{ transform: `rotate(${minuteDegrees}deg)` }} />
+            <div className={`absolute bottom-1/2 w-[1px] h-24 rounded-full origin-bottom shadow-sm transition-all duration-500 ${isDarkMode ? currentTheme.secondHandColor : 'bg-orange-500'}`} style={{ transform: `rotate(${secondDegrees}deg)` }} />
+            <div className={`absolute w-2 h-2 rounded-full z-10 transition-colors duration-500 ${isDarkMode ? currentTheme.handColor : 'bg-slate-900'}`} />
           </div>
         </div>
 
@@ -368,7 +381,7 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
             <button 
               key={theme.id} 
               onClick={() => setClockTheme(idx)}
-              className={`w-3 h-3 rounded-full transition-all duration-700 transform ${themeIndex === idx ? `${theme.dotColor} scale-[1.35] ring-4 ring-white/10 shadow-[0_0_15px_currentColor]` : 'bg-white/10 scale-100'}`} 
+              className={`w-3 h-3 rounded-full transition-all duration-700 transform ${themeIndex === idx ? `${theme.dotColor} scale-[1.35] ${isDarkMode ? 'ring-4 ring-white/10' : 'ring-4 ring-slate-200'} shadow-[0_0_15px_currentColor]` : isDarkMode ? 'bg-white/10 scale-100' : 'bg-slate-300 scale-100'}`} 
             />
           ))}
         </div>
@@ -376,16 +389,16 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
 
       <div className="w-full flex-1 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-1000 transition-transform duration-500 ease-out pb-6">
         <div className="flex items-baseline justify-center space-x-3">
-          <span className="text-5xl font-extralight tracking-tight tabular-nums drop-shadow-lg">{formatTimeMain(time)}</span>
-          <span className="text-lg font-light opacity-60">{formatAMPM(time)}</span>
+          <span className={`text-5xl font-extralight tracking-tight tabular-nums drop-shadow-lg ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{formatTimeMain(time)}</span>
+          <span className={`text-lg font-light opacity-60 ${isDarkMode ? 'text-white' : 'text-slate-700'}`}>{formatAMPM(time)}</span>
         </div>
-        <div className="mt-2 font-black tracking-[0.3em] text-[9px] uppercase opacity-20">{formatDate(time)}</div>
+        <div className={`mt-2 font-black tracking-[0.3em] text-[9px] uppercase ${isDarkMode ? 'text-white/30' : 'text-slate-500'}`}>{formatDate(time)}</div>
       </div>
 
       <div className="w-full h-1/3 overflow-y-auto hide-scrollbar px-10 pb-10">
         {loading ? (
           <div className="flex justify-center py-10">
-            <Loader2 className="animate-spin opacity-20" size={24} />
+            <Loader2 className={`animate-spin ${isDarkMode ? 'opacity-20' : 'text-slate-400'}`} size={24} />
           </div>
         ) : (
           <div className="pb-10">
@@ -397,17 +410,11 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
                   time={time} 
                   theme={currentTheme} 
                   onDelete={removeLocation} 
+                  isDarkMode={isDarkMode}
                 />
               ))
             ) : (
-              <div className="py-10 text-center">
-                <button 
-                  onClick={() => setIsAdding(true)}
-                  className="text-[9px] font-black uppercase tracking-widest text-orange-500/50 hover:text-orange-500 transition-colors"
-                >
-                  + Add City
-                </button>
-              </div>
+              <div className="py-10" />
             )}
           </div>
         )}
@@ -415,11 +422,13 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
 
       {isAdding && (
         <div className="fixed inset-0 z-[2000] flex items-end justify-center animate-in fade-in duration-300 px-4 pb-4">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsAdding(false)} />
-          <div className="relative w-full max-w-lg apple-blur rounded-[3rem] p-8 border border-white/10 shadow-2xl animate-in slide-in-from-bottom-full duration-500 ease-out pb-12">
+          <div className={`absolute inset-0 backdrop-blur-sm ${isDarkMode ? 'bg-black/80' : 'bg-slate-200/70'}`} onClick={() => setIsAdding(false)} />
+          <div className={`relative w-full max-w-lg rounded-[3rem] p-8 shadow-2xl animate-in slide-in-from-bottom-full duration-500 ease-out pb-12 transition-colors duration-700 ${
+            isDarkMode ? 'apple-blur border border-white/10' : 'bg-white border border-slate-200 text-slate-900'
+          }`}>
             <div className="flex justify-between items-center mb-8">
-               <h3 className="text-[11px] font-black opacity-40 uppercase tracking-[0.5em]">Add New City</h3>
-               <button onClick={() => setIsAdding(false)} className="p-2 text-white/20 hover:text-white transition-colors">
+               <h3 className={`text-[11px] font-black opacity-40 uppercase tracking-[0.5em] ${isDarkMode ? 'text-white' : 'text-slate-500'}`}>Add New City</h3>
+               <button onClick={() => setIsAdding(false)} className={`p-2 transition-colors ${isDarkMode ? 'text-white/20 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}>
                  <X size={20} />
                </button>
             </div>
@@ -429,7 +438,11 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
                  <select
                    value={countryFilter}
                    onChange={e => setCountryFilter(e.target.value)}
-                   className="w-full bg-white/5 rounded-2xl py-4 px-4 text-sm font-medium focus:outline-none border border-white/5 text-white"
+                   className={`w-full rounded-2xl py-4 px-4 text-sm font-medium focus:outline-none transition-colors duration-700 ${
+                    isDarkMode
+                      ? 'bg-white/5 border border-white/5 text-white'
+                      : 'bg-slate-50 border border-slate-200 text-slate-900'
+                   }`}
                  >
                    <option value="" className="text-black">All Countries</option>
                    {ALL_COUNTRIES.map(country => (
@@ -443,16 +456,20 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
                    placeholder="Search City..."
                    value={searchQuery}
                    onChange={e => setSearchQuery(e.target.value)}
-                   className="w-full bg-white/5 rounded-2xl py-5 pl-14 pr-6 text-sm font-medium focus:outline-none border border-white/5 text-white placeholder:text-white/10"
+                   className={`w-full rounded-2xl py-5 pl-14 pr-6 text-sm font-medium focus:outline-none transition-colors duration-700 ${
+                    isDarkMode
+                      ? 'bg-white/5 border border-white/5 text-white placeholder:text-white/10'
+                      : 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400'
+                   }`}
                  />
-                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                 <Search className={`absolute left-6 top-1/2 -translate-y-1/2 ${isDarkMode ? 'text-white/20' : 'text-slate-400'}`} size={18} />
                </div>
 
                <div className="space-y-3 max-h-60 overflow-y-auto hide-scrollbar">
                  {isSearching ? (
                    <div className="py-12 flex flex-col items-center justify-center space-y-4 opacity-30">
-                     <Loader2 className="animate-spin" size={24} />
-                     <span className="text-[9px] font-black uppercase tracking-widest">Searching cities...</span>
+                     <Loader2 className={`animate-spin ${isDarkMode ? 'text-white/40' : 'text-slate-500'}`} size={24} />
+                     <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? 'text-white/70' : 'text-slate-600'}`}>Searching cities...</span>
                    </div>
                  ) : (
                    <>
@@ -461,29 +478,37 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding }) => {
                          <button
                            key={loc.id}
                            onClick={() => addLocation(loc)}
-                           className="w-full text-left p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-white/20 transition-all flex items-center justify-between group active:scale-[0.98]"
+                           className={`w-full text-left p-6 rounded-3xl transition-all flex items-center justify-between group active:scale-[0.98] ${
+                            isDarkMode
+                              ? 'bg-white/5 border border-white/5 hover:border-white/20'
+                              : 'bg-slate-50 border border-slate-200 hover:border-slate-300'
+                           }`}
                          >
                            <div className="flex items-center space-x-4">
-                             <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center text-white/20 group-hover:text-white transition-colors">
+                             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors ${
+                              isDarkMode
+                                ? 'bg-white/5 text-white/20 group-hover:text-white'
+                                : 'bg-white text-slate-400 group-hover:text-slate-900 border border-slate-200'
+                             }`}>
                                <MapPin size={18} />
                              </div>
                              <div>
-                               <div className="text-sm font-bold text-white mb-0.5">{loc.name}</div>
-                               <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500">{loc.country}</div>
+                               <div className={`text-sm font-bold mb-0.5 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{loc.name}</div>
+                               <div className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? 'text-zinc-500' : 'text-slate-500'}`}>{loc.country}</div>
                              </div>
                            </div>
                            <div className="text-right">
                               <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">{loc.mood}</div>
-                              <div className="text-[8px] font-black text-white/20 uppercase tracking-widest">UTC {loc.offset >= 0 ? '+' : ''}{loc.offset}</div>
+                              <div className={`text-[8px] font-black uppercase tracking-widest ${isDarkMode ? 'text-white/20' : 'text-slate-400'}`}>UTC {loc.offset >= 0 ? '+' : ''}{loc.offset}</div>
                            </div>
                          </button>
                        ))
                      ) : searchQuery.length > 0 ? (
-                       <div className="py-12 text-center opacity-20 text-[9px] font-black uppercase tracking-widest">
+                       <div className={`py-12 text-center text-[9px] font-black uppercase tracking-widest ${isDarkMode ? 'opacity-20 text-white' : 'opacity-50 text-slate-500'}`}>
                          No matches found
                        </div>
                      ) : (
-                       <div className="py-8 text-center opacity-10 text-[9px] font-black uppercase tracking-[0.5em]">
+                       <div className={`py-8 text-center text-[9px] font-black uppercase tracking-[0.5em] ${isDarkMode ? 'opacity-10 text-white' : 'opacity-45 text-slate-500'}`}>
                          Start typing to find a city
                        </div>
                      )}
