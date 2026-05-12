@@ -598,7 +598,7 @@ const App: React.FC = () => {
   }, [sessionHistory]);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+    const unsubscribe = auth.onIdTokenChanged((currentUser) => {
       if (currentUser) {
         const metadata = currentUser.metadata;
         const isNewUser = metadata?.creationTime === metadata?.lastSignInTime;

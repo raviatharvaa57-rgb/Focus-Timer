@@ -37,6 +37,61 @@ const Auth: React.FC = () => {
     }
   }, [shake]);
 
+  useEffect(() => {
+    if (!verificationEmail) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const hydrateVerifiedUser = async () => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        return;
+      }
+
+      try {
+        await currentUser.reload();
+        if (cancelled || !currentUser.emailVerified) {
+          return;
+        }
+
+        await syncUserToFirestore(currentUser, currentUser.displayName || name || undefined);
+        setVerificationEmail(null);
+      } catch (error) {
+        console.error('Verification refresh failed:', error);
+      }
+    };
+
+    const interval = setInterval(hydrateVerifiedUser, 3000);
+    hydrateVerifiedUser();
+
+    const unsubscribe = auth.onIdTokenChanged(async (currentUser) => {
+      if (!currentUser || cancelled) {
+        return;
+      }
+
+      if (!currentUser.emailVerified) {
+        return;
+      }
+
+      try {
+        await syncUserToFirestore(currentUser, currentUser.displayName || name || undefined);
+        if (!cancelled) {
+          setVerificationEmail(null);
+        }
+      } catch (error) {
+        console.error('Verified user sync failed:', error);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      unsubscribe();
+    };
+  }, [verificationEmail, name]);
+
   const syncUserToFirestore = async (user: any, displayName?: string) => {
     const userRef = db.collection('users').doc(user.uid);
     const doc = await userRef.get();
