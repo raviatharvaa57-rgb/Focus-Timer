@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://focustimerar.vercel.app/sitemap.xml
