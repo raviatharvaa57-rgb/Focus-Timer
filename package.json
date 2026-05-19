@@ -12,13 +12,14 @@
     "server": "node server.js"
   },
   "dependencies": {
-    "react": "19.0.0",
-    "react-dom": "19.0.0",
-    "lucide-react": "0.474.0",
     "@google/genai": "1.38.0",
-    "firebase": "^12.8.0",
+    "@supabase/supabase-js": "^2.106.0",
     "dotenv": "^16.6.1",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "firebase": "^12.8.0",
+    "lucide-react": "0.474.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

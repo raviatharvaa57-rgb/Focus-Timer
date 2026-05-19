@@ -23,6 +23,7 @@ import AppUsageActivity from './components/AppUsageActivity';
 import Auth from './components/Auth';
 import Profile from './components/Profile';
 import FoxMascot, { FOX_GREETING_ROTATION, FoxPoseKey } from './components/FoxMascot';
+import SupabaseConnectionTest from './components/SupabaseConnectionTest';
 import { FOCUS_THEMES } from './constants';
 
 interface SessionRecord {
@@ -989,6 +990,7 @@ const App: React.FC = () => {
       className="fixed inset-0 flex flex-col overflow-hidden select-none transition-[background-color,color,opacity] duration-700"
       style={{ backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', color: isDarkMode ? '#f8fafc' : '#111827' }}
     >
+      <SupabaseConnectionTest />
       {/* Background Glow */}
       <div 
         className="fixed top-0 left-1/2 -translate-x-1/2 w-[180%] h-[500px] blur-[140px] opacity-[0.1] pointer-events-none transition-all duration-1000 z-0"
