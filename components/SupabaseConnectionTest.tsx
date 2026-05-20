@@ -4,6 +4,11 @@ import { supabase } from '../src/lib/supabase';
 const SupabaseConnectionTest: React.FC = () => {
   useEffect(() => {
     const testSupabaseConnection = async () => {
+      if (!supabase) {
+        console.warn('Supabase connection test skipped because env vars are missing.');
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from('profiles')
