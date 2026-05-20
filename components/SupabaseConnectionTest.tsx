@@ -10,6 +10,8 @@ const SupabaseConnectionTest: React.FC = () => {
       }
 
       try {
+        console.log('Testing Supabase connection against profiles table...');
+
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
