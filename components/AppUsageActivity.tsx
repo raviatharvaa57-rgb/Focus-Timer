@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Clock, History, RefreshCcw } from 'lucide-react';
+import { useResponsiveLayout } from '../src/hooks/useResponsiveLayout';
 
 interface SessionRecord {
   id: string;
@@ -17,6 +18,7 @@ interface AppUsageProps {
 }
 
 const AppUsageActivity: React.FC<AppUsageProps> = ({ onClose, currentSessionTime, sessionHistory, onClearHistory }) => {
+  const { isDesktop } = useResponsiveLayout();
   const formatDuration = (milliseconds: number): string => {
     const totalSeconds = Math.floor(milliseconds / 1000);
     const hours = Math.floor(totalSeconds / 3600);
@@ -50,7 +52,7 @@ const AppUsageActivity: React.FC<AppUsageProps> = ({ onClose, currentSessionTime
   const { hours, minutes, seconds } = formatCurrentTime(currentSessionTime);
 
   return (
-    <div className="w-full h-full p-6 overflow-y-auto">
+    <div className={`w-full h-full overflow-y-auto ${isDesktop ? 'p-8 lg:p-10' : 'p-4 sm:p-6'}`}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-white text-xl font-bold">App Usage Session History</h2>
         <button onClick={onClose} className="px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white">
@@ -61,8 +63,9 @@ const AppUsageActivity: React.FC<AppUsageProps> = ({ onClose, currentSessionTime
         <p className="text-white/70 text-sm">View your current session and past app usage sessions.</p>
       </div>
 
-      {/* Live Current Session Timer */}
-      <div className="border border-white/10 rounded-xl p-6 bg-black/30 mb-6">
+      <div className={`grid gap-6 ${isDesktop ? 'lg:grid-cols-[360px_minmax(0,1fr)]' : ''}`}>
+        {/* Live Current Session Timer */}
+        <div className="border border-white/10 rounded-xl p-6 bg-black/30 mb-6 lg:mb-0">
         <div className="flex items-center justify-center gap-3 mb-4">
           <Clock size={24} className="text-green-400" />
           <span className="text-white font-semibold text-lg">Current Session</span>
@@ -85,51 +88,54 @@ const AppUsageActivity: React.FC<AppUsageProps> = ({ onClose, currentSessionTime
         </div>
       </div>
 
-      {/* Session History */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <History size={16} className="text-white/50" />
-          <span className="text-white/70 text-sm">{sessionHistory.length} past sessions</span>
-        </div>
-        {sessionHistory.length > 0 && (
-          <button onClick={clearHistory} className="px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 text-xs">
-            Clear History
-          </button>
-        )}
-      </div>
-
-      {sessionHistory.length === 0 ? (
-        <div className="text-center py-8">
-          <History size={32} className="text-white/20 mx-auto mb-3" />
-          <p className="text-white/60 text-sm">No past sessions yet.</p>
-          <p className="text-white/40 text-xs mt-1">Past sessions appear here after you close the app.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {sessionHistory.slice().reverse().map((session, index) => (
-            <div key={session.id} className="border border-white/10 rounded-xl p-4 bg-black/30">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/40 flex items-center justify-center">
-                    <span className="text-blue-300 text-xs font-bold">{sessionHistory.length - index}</span>
-                  </div>
-                  <div>
-                    <div className="text-white font-semibold text-sm">Session {sessionHistory.length - index}</div>
-                    <div className="text-white/60 text-xs">{formatDate(session.startTime)}</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-blue-300 font-bold text-lg">{formatDuration(session.duration)}</div>
-                  <div className="text-white/50 text-xs">Duration</div>
-                </div>
-              </div>
-              <div className="text-white/40 text-xs">
-                Started: {formatDate(session.startTime)} • Ended: {formatDate(session.endTime)}
-              </div>
+        {/* Session History */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <History size={16} className="text-white/50" />
+              <span className="text-white/70 text-sm">{sessionHistory.length} past sessions</span>
             </div>
-          ))}
+            {sessionHistory.length > 0 && (
+              <button onClick={clearHistory} className="px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 text-xs">
+                Clear History
+              </button>
+            )}
+          </div>
+
+          {sessionHistory.length === 0 ? (
+            <div className="text-center py-8">
+              <History size={32} className="text-white/20 mx-auto mb-3" />
+              <p className="text-white/60 text-sm">No past sessions yet.</p>
+              <p className="text-white/40 text-xs mt-1">Past sessions appear here after you close the app.</p>
+            </div>
+          ) : (
+            <div className={`grid gap-3 ${isDesktop ? 'lg:grid-cols-2' : ''}`}>
+              {sessionHistory.slice().reverse().map((session, index) => (
+                <div key={session.id} className="border border-white/10 rounded-xl p-4 bg-black/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/40 flex items-center justify-center">
+                        <span className="text-blue-300 text-xs font-bold">{sessionHistory.length - index}</span>
+                      </div>
+                      <div>
+                        <div className="text-white font-semibold text-sm">Session {sessionHistory.length - index}</div>
+                        <div className="text-white/60 text-xs">{formatDate(session.startTime)}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-blue-300 font-bold text-lg">{formatDuration(session.duration)}</div>
+                      <div className="text-white/50 text-xs">Duration</div>
+                    </div>
+                  </div>
+                  <div className="text-white/40 text-xs">
+                    Started: {formatDate(session.startTime)} • Ended: {formatDate(session.endTime)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

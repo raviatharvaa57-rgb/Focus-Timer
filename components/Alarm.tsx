@@ -4,6 +4,7 @@ import { Trash2, ChevronUp, ChevronDown, Loader2, Pencil, X, Bell, BellRing } fr
 import { AlarmItem } from '../types';
 import { db } from '../firebase';
 import firebase from 'firebase/compat/app';
+import { useResponsiveLayout } from '../src/hooks/useResponsiveLayout';
 
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const FULL_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -19,6 +20,7 @@ interface AlarmProps {
 }
 
 const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding, canSendNotifications, onSendNotification, isDarkMode }) => {
+  const { isDesktop, isMobile } = useResponsiveLayout();
   const [alarms, setAlarms] = useState<AlarmItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [newLabel, setNewLabel] = useState('');
@@ -252,12 +254,12 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding, canSendNotif
   const showModal = isAdding || !!editingAlarm;
 
   return (
-    <div className={`h-full flex flex-col px-6 overflow-hidden transition-colors duration-700 ${isDarkMode ? 'bg-[#0f172a] text-white' : 'bg-white text-slate-900'}`}>
-      <header className="flex justify-between items-center pt-16 pb-6 shrink-0 relative">
+    <div className={`h-full flex flex-col overflow-hidden transition-colors duration-700 ${isDarkMode ? 'bg-[#0f172a] text-white' : 'bg-white text-slate-900'} ${isMobile ? 'px-4' : 'px-6'}`}>
+      <header className={`flex justify-between items-center shrink-0 relative ${isMobile ? 'pt-6 pb-4' : 'pt-16 pb-6'}`}>
         <h1 className="text-4xl font-bold tracking-tight">Alarm</h1>
       </header>
 
-      <div className="flex-1 overflow-y-auto hide-scrollbar space-y-4 pb-48 px-2">
+      <div className={`flex-1 overflow-y-auto hide-scrollbar pb-48 px-2 ${isDesktop ? 'grid gap-4 lg:grid-cols-2' : 'space-y-4'}`}>
         {loading ? (
           <div className="flex-1 flex items-center justify-center py-20">
             <Loader2 className={`animate-spin ${isDarkMode ? 'text-white/10' : 'text-slate-300'}`} size={32} />
@@ -328,15 +330,15 @@ const Alarm: React.FC<AlarmProps> = ({ user, isAdding, setIsAdding, canSendNotif
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-[2000] flex items-end justify-center animate-in fade-in duration-300 px-4 pb-4">
+        <div className={`fixed inset-0 z-[2000] flex items-end justify-center animate-in fade-in duration-300 ${isMobile ? 'px-4 pb-4' : 'px-6 pb-6'}`}>
           <div className={`absolute inset-0 backdrop-blur-sm ${isDarkMode ? 'bg-black/80' : 'bg-slate-200/70'}`} onClick={closeDialog} />
-          <div className={`relative w-full max-w-lg rounded-[3.5rem] p-8 shadow-2xl animate-in slide-in-from-bottom-full duration-500 ease-out pb-12 transition-colors duration-700 ${
+          <div className={`relative w-full ${isDesktop ? 'max-w-4xl' : 'max-w-lg'} rounded-[3.5rem] p-6 sm:p-8 shadow-2xl animate-in slide-in-from-bottom-full duration-500 ease-out pb-12 transition-colors duration-700 ${
             isDarkMode ? 'apple-blur border border-white/10' : 'bg-white border border-slate-200 text-slate-900'
           }`}>
             <h3 className={`text-[11px] font-black mb-8 text-center opacity-40 uppercase tracking-[0.5em] ${isDarkMode ? 'text-white' : 'text-slate-500'}`}>
               {editingAlarm ? 'Edit Alarm' : 'Add New Alarm'}
             </h3>
-            <div className="space-y-8">
+            <div className={`${isDesktop ? 'grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]' : 'space-y-8'}`}>
               <WheelPicker />
               <div className="space-y-3">
                 <p className="text-[9px] uppercase tracking-[0.3em] opacity-30 font-black ml-4">Label</p>

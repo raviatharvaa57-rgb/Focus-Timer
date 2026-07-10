@@ -2,8 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
 import { Loader2, Eye, EyeOff, Mail, Key } from 'lucide-react';
+import { useResponsiveLayout } from '../src/hooks/useResponsiveLayout';
 
 const Auth: React.FC = () => {
+  const { isDesktop, isMobile } = useResponsiveLayout();
   const [isLogin, setIsLogin] = useState(true);
   const [isResetting, setIsResetting] = useState(false);
   const [email, setEmail] = useState('');
@@ -189,8 +191,8 @@ const Auth: React.FC = () => {
 
   if (verificationEmail) {
     return (
-      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center p-6 z-[3000]">
-        <div className="w-full max-w-sm apple-blur rounded-[3rem] p-10 border border-white/10 text-center animate-in fade-in zoom-in-95">
+      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center p-4 sm:p-6 z-[3000]">
+        <div className={`w-full ${isDesktop ? 'max-w-lg' : 'max-w-sm'} apple-blur rounded-[3rem] p-8 sm:p-10 border border-white/10 text-center animate-in fade-in zoom-in-95`}>
           <Mail size={40} className="text-white mx-auto mb-8 animate-pulse" />
           <h2 className="text-3xl font-bold text-white mb-4">Check your email</h2>
           <p className="text-zinc-400 text-sm mb-2">Verification sent to <span className="text-white font-semibold">{verificationEmail}</span>.</p>
@@ -203,8 +205,8 @@ const Auth: React.FC = () => {
 
   if (resetSentEmail) {
     return (
-      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center p-6 z-[3000]">
-        <div className="w-full max-w-sm apple-blur rounded-[3rem] p-10 border border-white/10 text-center animate-in fade-in zoom-in-95">
+      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center p-4 sm:p-6 z-[3000]">
+        <div className={`w-full ${isDesktop ? 'max-w-lg' : 'max-w-sm'} apple-blur rounded-[3rem] p-8 sm:p-10 border border-white/10 text-center animate-in fade-in zoom-in-95`}>
           <Key size={40} className="text-white mx-auto mb-8 animate-pulse" />
           <h2 className="text-3xl font-bold text-white mb-4">Reset link sent</h2>
           <p className="text-zinc-400 text-sm mb-4">Follow instructions in your email to reset password.</p>
@@ -216,8 +218,8 @@ const Auth: React.FC = () => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col items-center justify-center p-6 z-[3000] overflow-y-auto">
-      <div className={`w-full max-w-sm apple-blur rounded-[3rem] p-8 border border-white/10 shadow-2xl relative z-10 animate-in fade-in zoom-in-95 ${shake ? 'animate-shake' : ''}`}>
+    <div className={`fixed inset-0 bg-black flex flex-col items-center justify-center ${isMobile ? 'p-4' : 'p-6'} z-[3000] overflow-y-auto`}>
+      <div className={`w-full ${isDesktop ? 'max-w-4xl' : 'max-w-sm'} apple-blur rounded-[3rem] ${isDesktop ? 'p-10' : 'p-8'} border border-white/10 shadow-2xl relative z-10 animate-in fade-in zoom-in-95 ${shake ? 'animate-shake' : ''}`}>
         <div className="text-center mb-10">
           <div className="w-20 h-20 bg-white/5 rounded-[2rem] border border-white/10 flex items-center justify-center mx-auto mb-6 shadow-2xl">
             <span className="text-4xl">{isResetting ? "🔑" : "⏳"}</span>

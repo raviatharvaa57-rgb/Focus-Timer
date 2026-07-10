@@ -141,10 +141,10 @@ const Profile: React.FC<ProfileProps> = ({
   if (loading) return null;
 
   return (
-    <div className="fixed inset-0 z-[4000] flex items-center justify-center p-6 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
       <div className={`${isDarkMode ? 'bg-black/90' : 'bg-slate-200/70'} absolute inset-0 backdrop-blur-2xl transition-colors duration-700`} onClick={onClose} />
       
-      <div className={`relative w-full max-w-sm rounded-[3rem] p-8 shadow-2xl animate-in zoom-in-95 max-h-[92vh] overflow-y-auto hide-scrollbar transition-colors duration-700 ${
+      <div className={`relative w-full max-w-sm sm:max-w-2xl lg:max-w-4xl rounded-[3rem] p-6 sm:p-8 lg:p-10 shadow-2xl animate-in zoom-in-95 max-h-[92vh] overflow-y-auto hide-scrollbar transition-colors duration-700 ${
         isDarkMode ? 'apple-blur border border-white/10 bg-[#111827]/92 text-white' : 'border border-slate-200 bg-white/96 text-slate-900'
       }`}>
         <button onClick={onClose} className={`absolute top-6 right-6 transition-colors z-20 ${isDarkMode ? 'text-zinc-600 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}>
@@ -161,7 +161,7 @@ const Profile: React.FC<ProfileProps> = ({
           <p className="text-[8px] uppercase tracking-[0.4em] text-zinc-600 font-black mt-1">Focus Account</p>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-8 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
           {/* Account Settings */}
           <div className="space-y-4 pt-6 border-t border-white/5">
             <div className={`flex items-center space-x-4 p-4 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-200'}`}>
@@ -311,7 +311,7 @@ const Profile: React.FC<ProfileProps> = ({
             </div>
           </div>
 
-          <div className="space-y-4 pt-6 border-t border-white/5">
+          <div className="space-y-4 pt-6 border-t border-white/5 lg:pt-6">
             <div>
               <p className="text-[8px] font-black uppercase tracking-[0.4em] text-zinc-600">Notifications</p>
               <p className={`mt-3 text-sm ${isDarkMode ? 'text-white/75' : 'text-slate-600'}`}>

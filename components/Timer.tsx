@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, RotateCcw, Plus, Minus, Settings2 } from 'lucide-react';
 import { FOCUS_THEMES, PRESETS } from '../constants';
 import ThemeAnimator from './ThemeAnimator';
+import { useResponsiveLayout } from '../src/hooks/useResponsiveLayout';
 
 const ZEN_BOWL_URL = 'https://cdn.freesound.org/previews/320/320655_5260872-lq.mp3';
 const NOTE_STORAGE_KEY = 'focusTimerFloatingNote';
@@ -32,6 +33,7 @@ interface TimerProps {
 }
 
 const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusSessionComplete, onMascotAction, isDarkMode }) => {
+  const { isDesktop, isTablet, isMobile } = useResponsiveLayout();
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [totalTime, setTotalTime] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
@@ -363,7 +365,7 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
       <div className={`absolute inset-0 bg-gradient-to-b ${currentTheme.bgGradient} opacity-30 transition-all duration-1000`} />
       
       {/* HEADER */}
-      <header className="w-full flex flex-col items-start pt-16 lg:pt-14 pb-2 px-10 z-50 relative pointer-events-none">
+      <header className={`w-full flex flex-col items-start pb-2 z-50 relative pointer-events-none ${isMobile ? 'pt-4 px-4' : isTablet ? 'pt-8 px-6' : 'pt-16 lg:pt-14 px-10'}`}>
         <h1 className={`text-4xl lg:text-3xl font-bold tracking-tight ${isDarkMode ? 'text-white/90' : 'text-slate-900'}`}>Focus</h1>
         <p className={`text-[10px] uppercase tracking-[0.4em] font-black mt-1 opacity-30 ${isDarkMode ? 'text-white' : 'text-slate-600'}`}>
             {currentTheme.name}
@@ -371,12 +373,12 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
       </header>
 
       {/* CONTENT AREA - justify-between pushes bottom group down. Reduced pb from 12/20 to 4/8 to lower the pill. */}
-      <div className="w-full flex-1 flex flex-col items-center justify-between relative z-10 px-6 pt-4 pb-4 lg:pb-8">
+      <div className={`w-full flex-1 flex flex-col items-center justify-between relative z-10 ${isMobile ? 'px-4 pt-3 pb-4' : isTablet ? 'px-6 pt-4 pb-5' : 'px-6 pt-4 pb-4 lg:pb-8'}`}>
         {/* Top Group: Theme and Time */}
-        <div className="flex flex-col items-center flex-1 justify-center lg:gap-10">
+        <div className={`flex flex-col items-center flex-1 justify-center ${isDesktop ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10 lg:items-center' : 'lg:gap-10'}`}>
           {/* Theme Bubble */}
           <div 
-            className="relative w-52 h-52 lg:w-48 lg:h-48 flex flex-col items-center justify-center cursor-pointer group mb-4"
+            className={`relative flex flex-col items-center justify-center cursor-pointer group mb-4 ${isMobile ? 'w-44 h-44' : isTablet ? 'w-52 h-52' : 'w-52 h-52 lg:w-48 lg:h-48'}`}
             onClick={nextTheme}
           >
             {/* Bubble Ring */}
@@ -422,7 +424,7 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
         </div>
 
         {/* Bottom Group: The Control Pill - Moved down by reducing mb from 4/8 to 2/4 */}
-        <div className={`flex items-center justify-center gap-6 lg:gap-10 backdrop-blur-3xl py-4 lg:py-5 px-7 lg:px-10 rounded-[2.5rem] shadow-2xl mt-8 lg:mt-0 mb-2 lg:mb-4 ${
+        <div className={`flex items-center justify-center gap-4 sm:gap-6 lg:gap-10 backdrop-blur-3xl py-4 lg:py-5 px-5 sm:px-7 lg:px-10 rounded-[2.5rem] shadow-2xl mt-8 lg:mt-0 mb-2 lg:mb-4 ${
           isDarkMode ? 'bg-zinc-900/60 border border-white/5' : 'bg-slate-100/90 border border-slate-200'
         }`}>
           <button 

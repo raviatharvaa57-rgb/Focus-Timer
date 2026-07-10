@@ -5,6 +5,7 @@ import { CLOCK_THEMES } from '../constants';
 import { WorldLocation } from '../types';
 import { db } from '../firebase';
 import firebase from 'firebase/compat/app';
+import { useResponsiveLayout } from '../src/hooks/useResponsiveLayout';
 
 // Static database of major world cities to replace AI search
 const WORLD_CITIES: WorldLocation[] = [
@@ -169,6 +170,7 @@ const LocationItem: React.FC<{
 };
 
 const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding, isDarkMode }) => {
+  const { isDesktop, isTablet, isMobile } = useResponsiveLayout();
   const [time, setTime] = useState(new Date());
   const [themeIndex, setThemeIndex] = useState(0);
   const [locations, setLocations] = useState<WorldLocation[]>([]);
@@ -327,13 +329,13 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding, isDarkMode }
 
   return (
     <div 
-      className={`h-full flex flex-col items-center pt-8 pb-32 transition-all duration-1000 overflow-hidden ${
+      className={`h-full flex flex-col items-center transition-all duration-1000 overflow-hidden ${
         isDarkMode ? 'bg-[#0f172a] text-white' : 'bg-white text-slate-900'
       }`}
     >
       <div className={`absolute inset-0 transition-opacity duration-700 ${isDarkMode ? `bg-gradient-to-b ${currentTheme.bgGradient} opacity-25` : 'bg-gradient-to-b from-slate-100 via-white to-white opacity-100'}`} />
-      <div className="w-full flex flex-col items-center shrink-0 pt-8">
-        <header className="w-full flex justify-between items-center mb-6 px-10 animate-in fade-in slide-in-from-top-2 transition-transform duration-500 ease-out">
+      <div className={`w-full flex flex-col items-center shrink-0 ${isMobile ? 'pt-4 pb-4' : 'pt-8'} ${isDesktop ? 'lg:px-10' : 'px-4 sm:px-8'}`}>
+        <header className="w-full flex justify-between items-center mb-6 animate-in fade-in slide-in-from-top-2 transition-transform duration-500 ease-out">
           <div className="flex flex-col">
             <h1 className={`text-4xl font-bold tracking-tight ${isDarkMode ? 'text-white drop-shadow-xl' : 'text-slate-900'}`}>Local Time</h1>
             <p className={`text-[10px] uppercase tracking-[0.4em] font-black mt-1 ${isDarkMode ? 'text-white/30' : 'text-slate-500'}`}>{currentTheme.name}</p>
@@ -343,7 +345,9 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding, isDarkMode }
         {/* Analog Clock Face */}
         <div 
           onClick={cycleTheme}
-          className={`relative w-72 h-72 flex items-center justify-center cursor-pointer active:scale-[0.98] transition-all duration-500 ease-out ${
+          className={`relative flex items-center justify-center cursor-pointer active:scale-[0.98] transition-all duration-500 ease-out ${
+            isMobile ? 'w-64 h-64' : isTablet ? 'w-72 h-72' : 'w-80 h-80'
+          } ${
             slideDirection === 'right' ? 'animate-in slide-in-from-right-12' : 
             slideDirection === 'left' ? 'animate-in slide-in-from-left-12' : ''
           }`}
@@ -387,7 +391,7 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding, isDarkMode }
         </div>
       </div>
 
-      <div className="w-full flex-1 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-1000 transition-transform duration-500 ease-out pb-6">
+      <div className={`w-full flex-1 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-1000 transition-transform duration-500 ease-out pb-6 ${isDesktop ? 'lg:max-w-5xl' : ''}`}>
         <div className="flex items-baseline justify-center space-x-3">
           <span className={`text-5xl font-extralight tracking-tight tabular-nums drop-shadow-lg ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{formatTimeMain(time)}</span>
           <span className={`text-lg font-light opacity-60 ${isDarkMode ? 'text-white' : 'text-slate-700'}`}>{formatAMPM(time)}</span>
@@ -395,7 +399,7 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding, isDarkMode }
         <div className={`mt-2 font-black tracking-[0.3em] text-[9px] uppercase ${isDarkMode ? 'text-white/30' : 'text-slate-500'}`}>{formatDate(time)}</div>
       </div>
 
-      <div className="w-full h-1/3 overflow-y-auto hide-scrollbar px-10 pb-10">
+      <div className={`w-full overflow-y-auto hide-scrollbar ${isDesktop ? 'lg:grid lg:grid-cols-2 lg:gap-4 lg:px-10 lg:pb-10' : 'h-1/3 px-4 sm:px-10 pb-10'}`}>
         {loading ? (
           <div className="flex justify-center py-10">
             <Loader2 className={`animate-spin ${isDarkMode ? 'opacity-20' : 'text-slate-400'}`} size={24} />
@@ -421,9 +425,9 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding, isDarkMode }
       </div>
 
       {isAdding && (
-        <div className="fixed inset-0 z-[2000] flex items-end justify-center animate-in fade-in duration-300 px-4 pb-4">
+        <div className={`fixed inset-0 z-[2000] flex items-end justify-center animate-in fade-in duration-300 ${isMobile ? 'px-4 pb-4' : 'px-6 pb-6'}`}>
           <div className={`absolute inset-0 backdrop-blur-sm ${isDarkMode ? 'bg-black/80' : 'bg-slate-200/70'}`} onClick={() => setIsAdding(false)} />
-          <div className={`relative w-full max-w-lg rounded-[3rem] p-8 shadow-2xl animate-in slide-in-from-bottom-full duration-500 ease-out pb-12 transition-colors duration-700 ${
+          <div className={`relative w-full ${isDesktop ? 'max-w-4xl' : 'max-w-lg'} rounded-[3rem] p-6 sm:p-8 shadow-2xl animate-in slide-in-from-bottom-full duration-500 ease-out pb-12 transition-colors duration-700 ${
             isDarkMode ? 'apple-blur border border-white/10' : 'bg-white border border-slate-200 text-slate-900'
           }`}>
             <div className="flex justify-between items-center mb-8">
@@ -433,7 +437,7 @@ const Clock: React.FC<ClockProps> = ({ user, isAdding, setIsAdding, isDarkMode }
                </button>
             </div>
             
-            <div className="space-y-6">
+            <div className={`${isDesktop ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-6 lg:space-y-0' : 'space-y-6'}`}>
                <div className="relative">
                  <select
                    value={countryFilter}

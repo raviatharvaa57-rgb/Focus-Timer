@@ -25,6 +25,7 @@ import Profile from './components/Profile';
 import FoxMascot, { FOX_GREETING_ROTATION, FoxPoseKey } from './components/FoxMascot';
 import SupabaseConnectionTest from './components/SupabaseConnectionTest';
 import { FOCUS_THEMES } from './constants';
+import { useResponsiveLayout } from './src/hooks/useResponsiveLayout';
 
 interface SessionRecord {
   id: string;
@@ -122,6 +123,7 @@ const normalizeAchievementPreferences = (
 });
 
 const App: React.FC = () => {
+  const { isMobile, isTablet } = useResponsiveLayout();
   const [activeTab, setActiveTab] = useState<AppTab>('timer');
   const [previousTab, setPreviousTab] = useState<AppTab>('timer');
   const [user, setUser] = useState<firebase.User | null>(null);
@@ -999,14 +1001,14 @@ const App: React.FC = () => {
 
       {/* MATCHED TOP-RIGHT ACTIONS */}
       {!isImmersiveLandscape && activeTab !== 'tasks' && activeTab !== 'appUsage' && (
-        <div className="fixed z-[100] top-12 right-8 flex items-center gap-3">
+        <div className={`fixed z-[100] flex items-center gap-2 sm:gap-3 ${isMobile ? 'top-3 right-3 left-3 justify-end flex-wrap' : isTablet ? 'top-5 right-5 flex-wrap justify-end max-w-[calc(100vw-2.5rem)]' : 'top-12 right-8'}`}>
           {activeTab === 'timer' && (
             <button
               onClick={() => {
                 setGoalInput(dailyGoal);
                 setShowDailyGoalEditor(true);
               }}
-              className={`max-w-[180px] rounded-full px-4 py-2 text-left backdrop-blur-md transition-all active:scale-95 ${
+              className={`w-full sm:w-auto max-w-[180px] rounded-full px-4 py-2 text-left backdrop-blur-md transition-all active:scale-95 ${
                 isDarkMode ? 'border border-white/5 bg-white/5' : 'border border-slate-200 bg-white/90 shadow-sm'
               }`}
             >
@@ -1033,7 +1035,8 @@ const App: React.FC = () => {
 
       <main className="flex-1 relative overflow-hidden">
         {/* Render all tabs simultaneously but hide inactive ones to keep background processes running */}
-        <div className={`absolute inset-0 ${activeTab === 'timer' ? 'block' : 'hidden'}`}>
+        <div className={`absolute inset-0 flex justify-center ${activeTab === 'timer' ? 'block' : 'hidden'}`}>
+          <div className={`h-full w-full ${isMobile ? 'px-0' : isTablet ? 'px-3' : 'px-6'} max-w-[1680px]`}>
           <Timer
             isCustomizing={isActionActive}
             setIsCustomizing={setIsActionActive}
@@ -1041,9 +1044,11 @@ const App: React.FC = () => {
             onMascotAction={handleMascotAction}
             isDarkMode={isDarkMode}
           />
+          </div>
         </div>
         
-        <div className={`absolute inset-0 ${activeTab === 'alarm' ? 'block' : 'hidden'}`}>
+        <div className={`absolute inset-0 flex justify-center ${activeTab === 'alarm' ? 'block' : 'hidden'}`}>
+          <div className={`h-full w-full ${isMobile ? 'px-0' : isTablet ? 'px-3' : 'px-6'} max-w-[1680px]`}>
           <Alarm
             user={user}
             isAdding={isActionActive}
@@ -1052,24 +1057,32 @@ const App: React.FC = () => {
             onSendNotification={sendSystemNotification}
             isDarkMode={isDarkMode}
           />
+          </div>
         </div>
         
-        <div className={`absolute inset-0 ${activeTab === 'stopwatch' ? 'block' : 'hidden'}`}>
+        <div className={`absolute inset-0 flex justify-center ${activeTab === 'stopwatch' ? 'block' : 'hidden'}`}>
+          <div className={`h-full w-full ${isMobile ? 'px-0' : isTablet ? 'px-3' : 'px-6'} max-w-[1680px]`}>
           <Stopwatch isDarkMode={isDarkMode} />
+          </div>
         </div>
         
-        <div className={`absolute inset-0 ${activeTab === 'clock' ? 'block' : 'hidden'}`}>
+        <div className={`absolute inset-0 flex justify-center ${activeTab === 'clock' ? 'block' : 'hidden'}`}>
+          <div className={`h-full w-full ${isMobile ? 'px-0' : isTablet ? 'px-3' : 'px-6'} max-w-[1680px]`}>
           <Clock user={user} isAdding={isActionActive} setIsAdding={setIsActionActive} isDarkMode={isDarkMode} />
+          </div>
         </div>
 
-        <div className={`absolute inset-0 ${activeTab === 'tasks' ? 'block' : 'hidden'}`}>
+        <div className={`absolute inset-0 flex justify-center ${activeTab === 'tasks' ? 'block' : 'hidden'}`}>
+          <div className={`h-full w-full ${isMobile ? 'px-0' : isTablet ? 'px-3' : 'px-6'} max-w-[1680px]`}>
           <Tasks
             onExit={exitTasks}
             onTasksChange={setTasksSnapshot}
           />
+          </div>
         </div>
 
-        <div className={`absolute inset-0 ${activeTab === 'appUsage' ? 'block' : 'hidden'}`}>
+        <div className={`absolute inset-0 flex justify-center ${activeTab === 'appUsage' ? 'block' : 'hidden'}`}>
+          <div className={`h-full w-full ${isMobile ? 'px-0' : isTablet ? 'px-3' : 'px-6'} max-w-[1680px]`}>
           <AppUsageActivity
             onClose={exitTasks}
             currentSessionTime={currentSessionTime}
@@ -1080,6 +1093,7 @@ const App: React.FC = () => {
               setSessionHistory([]);
             }}
           />
+          </div>
         </div>
       </main>
 
@@ -1351,8 +1365,8 @@ const App: React.FC = () => {
 
       {/* MATCHED BOTTOM NAVIGATION - Moved lower by reducing bottom padding and height */}
       {!isImmersiveLandscape && activeTab !== 'appUsage' && (
-        <div className="w-full px-6 pb-3 safe-bottom z-[1000]">
-          <nav className={`mx-auto max-w-lg h-18 backdrop-blur-[60px] rounded-[3rem] px-3 flex justify-around items-center shadow-2xl ${isDarkMode ? 'bg-black/40 border border-white/[0.05]' : 'bg-white/90 border border-slate-200'}`}>
+        <div className={`w-full safe-bottom z-[1000] ${isMobile ? 'px-3 pb-2' : isTablet ? 'px-5 pb-3' : 'px-6 pb-3'}`}>
+          <nav className={`mx-auto h-18 backdrop-blur-[60px] rounded-[3rem] px-3 flex justify-around items-center shadow-2xl ${isMobile ? 'w-full max-w-none' : 'max-w-lg'} ${isDarkMode ? 'bg-black/40 border border-white/[0.05]' : 'bg-white/90 border border-slate-200'}`}>
             <TabButton active={activeTab === 'clock'} onClick={() => handleTabChange('clock')} icon={<ClockIcon size={20} strokeWidth={1.5} />} label="LOCAL" isDarkMode={isDarkMode} />
             <TabButton active={activeTab === 'alarm'} onClick={() => handleTabChange('alarm')} icon={<AlarmClock size={20} strokeWidth={1.5} />} label="ALARM" isDarkMode={isDarkMode} />
             <TabButton active={activeTab === 'stopwatch'} onClick={() => handleTabChange('stopwatch')} icon={<StopwatchIcon size={20} strokeWidth={1.5} />} label="STOP" isDarkMode={isDarkMode} />
