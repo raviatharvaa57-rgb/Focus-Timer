@@ -7,7 +7,7 @@ This app focuses on simplicity, speed, and a calm user experience to improve foc
 ---
 
 ## 🌐 Live Application
-👉 https://focus-timer-taupe-sigma.vercel.app/
+👉 https://focustimerar.vercel.app/
 
 ---
 
