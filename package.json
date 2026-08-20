@@ -10,6 +10,26 @@
     "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
     "electron:build": "npm run build && electron-builder"
   },
+  "dependencies": {
+    "@google/genai": "1.38.0",
+    "@supabase/supabase-js": "^2.106.0",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "firebase": "^12.8.0",
+    "lucide-react": "0.474.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^9.2.4",
+    "electron": "^43.4.1",
+    "electron-builder": "^26.15.3",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0",
+    "wait-on": "^9.1.0"
+  },
   "build": {
     "appId": "com.focus.timer",
     "productName": "Focus Timer",
