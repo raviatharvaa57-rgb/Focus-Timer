@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@google/genai": "1.38.0",
-    "@supabase/supabase-js": "^2.106.0",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
     "firebase": "^12.8.0",
@@ -42,7 +41,9 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
-      "target": ["dmg"]
+      "target": [
+        "dmg"
+      ]
     }
   }
 }

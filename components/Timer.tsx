@@ -732,3 +732,17 @@ style.textContent = `
   }
 `;
 document.head.appendChild(style);
+
+interface TodoItem {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
+// Ensure your array filtering explicitly checks property types:
+const validTodos = rawTodos.filter(
+  (item): item is TodoItem =>
+    typeof item?.id === 'string' &&
+    typeof item?.text === 'string' &&
+    typeof item?.completed === 'boolean'
+);
