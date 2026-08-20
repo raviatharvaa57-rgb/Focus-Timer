@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, RotateCcw, Plus, Minus, Settings2 } from 'lucide-react';
 import { FOCUS_THEMES, PRESETS } from '../constants';
@@ -7,8 +6,7 @@ import { useResponsiveLayout } from '../src/hooks/useResponsiveLayout';
 
 const ZEN_BOWL_URL = 'https://cdn.freesound.org/previews/320/320655_5260872-lq.mp3';
 const NOTE_STORAGE_KEY = 'focusTimerFloatingNote';
-const NOTE_WIDTH = 220;
-const NOTE_HEIGHT = 190;
+
 const createNoteLine = () => ({
   id: crypto.randomUUID(),
   text: '',
@@ -74,13 +72,11 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
       const parsedNote = JSON.parse(savedNote) as Partial<FloatingNoteState>;
       setFloatingNote({
         lines: Array.isArray(parsedNote.lines)
-          ? parsedNote.lines
-              .filter((line): line is { id?: string; text?: string; completed?: boolean } => Boolean(line))
-              .map((line) => ({
-                id: typeof line.id === 'string' ? line.id : crypto.randomUUID(),
-                text: typeof line.text === 'string' ? line.text : '',
-                completed: Boolean(line.completed),
-              }))
+          ? parsedNote.lines.map((line) => ({
+              id: typeof line?.id === 'string' ? line.id : crypto.randomUUID(),
+              text: typeof line?.text === 'string' ? line.text : '',
+              completed: Boolean(line?.completed),
+            }))
           : [createNoteLine()],
         collapsed: Boolean(parsedNote.collapsed),
       });
@@ -126,7 +122,7 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
     audio.addEventListener('ended', onEnded);
     audio.currentTime = 0;
     audio.play().catch(e => console.error("Audio play failed:", e));
-  }, []);
+  }, [isAlarmEnabled]);
 
   useEffect(() => {
     if (ambientAudioRef.current) {
@@ -149,7 +145,7 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
       }
     }
     return () => { if (ambientAudioRef.current) ambientAudioRef.current.pause(); };
-  }, [themeIndex, isActive, isMuted]);
+  }, [themeIndex, isActive, isMuted, currentTheme.soundUrl]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
@@ -218,14 +214,12 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
         clearInterval(interval);
       }
     };
-  }, [isActive, timeLeft, totalTime, isBreakActive, breakTimeLeft, totalBreakTime, onFocusSessionComplete, playAlarmThrice]);
+  }, [isActive, timeLeft, totalTime, isBreakActive, breakTimeLeft, totalBreakTime, onFocusSessionComplete, playAlarmThrice, onMascotAction]);
 
   const toggleTimer = () => { 
     const nextAction = isActive || isBreakActive ? 'pause' : 'start';
     if (isBreakActive) {
-      if (isBreakActive) {
-        breakEndTimeRef.current = null;
-      }
+      breakEndTimeRef.current = null;
       setIsBreakActive(!isBreakActive);
     } else {
       if (isActive) {
@@ -236,6 +230,7 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
     onMascotAction(nextAction);
     if (window.navigator.vibrate) window.navigator.vibrate(10); 
   };
+
   const resetTimer = () => { 
     focusEndTimeRef.current = null;
     breakEndTimeRef.current = null;
@@ -243,7 +238,7 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
     setIsActive(false); 
     setTimeLeft(totalTime); 
     setIsBreakActive(false);
-    setBreakTimeLeft(0); // Reset break timer to 0 since break hasn't started
+    setBreakTimeLeft(0);
     onMascotAction('reset');
     if (window.navigator.vibrate) window.navigator.vibrate(5); 
   };
@@ -274,13 +269,6 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
       ...previous,
       lines: updater(previous.lines),
     }));
-  };
-
-  const addNoteLine = () => {
-    updateNoteLines((previous) => [
-      ...previous,
-      createNoteLine(),
-    ]);
   };
 
   const updateNoteLine = (id: string, text: string) => {
@@ -361,10 +349,8 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
 
   return (
     <div ref={containerRef} className={`relative flex flex-col h-full w-full overflow-hidden transition-all duration-1000 ${isDarkMode ? 'bg-[#0f172a]' : 'bg-white'}`}>
-      {/* Background with Theme Gradient Overlay */}
       <div className={`absolute inset-0 bg-gradient-to-b ${currentTheme.bgGradient} opacity-30 transition-all duration-1000`} />
       
-      {/* HEADER */}
       <header className={`w-full flex flex-col items-start pb-2 z-50 relative pointer-events-none ${isMobile ? 'pt-4 px-4' : isTablet ? 'pt-8 px-6' : 'pt-16 lg:pt-14 px-10'}`}>
         <h1 className={`text-4xl lg:text-3xl font-bold tracking-tight ${isDarkMode ? 'text-white/90' : 'text-slate-900'}`}>Focus</h1>
         <p className={`text-[10px] uppercase tracking-[0.4em] font-black mt-1 opacity-30 ${isDarkMode ? 'text-white' : 'text-slate-600'}`}>
@@ -372,29 +358,23 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
         </p>
       </header>
 
-      {/* CONTENT AREA - justify-between pushes bottom group down. Reduced pb from 12/20 to 4/8 to lower the pill. */}
       <div className={`w-full flex-1 flex flex-col items-center justify-between relative z-10 ${isMobile ? 'px-4 pt-3 pb-4' : isTablet ? 'px-6 pt-4 pb-5' : 'px-6 pt-4 pb-4 lg:pb-8'}`}>
-        {/* Top Group: Theme and Time */}
         <div className={`flex flex-col items-center flex-1 justify-center ${isDesktop ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10 lg:items-center' : 'lg:gap-10'}`}>
-          {/* Theme Bubble */}
           <div 
             className={`relative flex flex-col items-center justify-center cursor-pointer group mb-4 ${isMobile ? 'w-44 h-44' : isTablet ? 'w-52 h-52' : 'w-52 h-52 lg:w-48 lg:h-48'}`}
             onClick={nextTheme}
           >
-            {/* Bubble Ring */}
             <div 
               className={`absolute inset-0 rounded-full backdrop-blur-md transition-all duration-700 group-hover:scale-105 group-active:scale-95 shadow-2xl ${
                 isDarkMode ? 'border border-white/5 bg-white/[0.02]' : 'border border-slate-200 bg-white/60'
               }`} 
             />
             
-            {/* Animated Component */}
             <div className="scale-[0.85] lg:scale-[0.8] transition-transform duration-700 z-10">
                <ThemeAnimator themeId={currentTheme.id} />
             </div>
           </div>
 
-          {/* Time and Dots */}
           <div className="flex flex-col items-center">
             <button 
               onClick={openPicker}
@@ -403,14 +383,12 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
               {isBreakActive ? formatTime(breakTimeLeft) : formatTime(timeLeft)}
             </button>
 
-            {/* Break Indicator */}
             {isBreakActive && (
               <div className={`text-[10px] uppercase tracking-widest font-bold opacity-60 mb-2 ${isDarkMode ? 'text-white' : 'text-slate-700'}`}>
                 Break Time
               </div>
             )}
 
-            {/* Pagination Dots */}
             <div className="flex items-center justify-center gap-2">
               {FOCUS_THEMES.map((t, idx) => (
                 <div 
@@ -423,7 +401,6 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
           </div>
         </div>
 
-        {/* Bottom Group: The Control Pill - Moved down by reducing mb from 4/8 to 2/4 */}
         <div className={`flex items-center justify-center gap-4 sm:gap-6 lg:gap-10 backdrop-blur-3xl py-4 lg:py-5 px-5 sm:px-7 lg:px-10 rounded-[2.5rem] shadow-2xl mt-8 lg:mt-0 mb-2 lg:mb-4 ${
           isDarkMode ? 'bg-zinc-900/60 border border-white/5' : 'bg-slate-100/90 border border-slate-200'
         }`}>
@@ -547,7 +524,6 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
         )}
       </div>
 
-      {/* TIMER SETUP OVERLAY */}
       {isCustomizing && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 animate-in fade-in duration-500">
           <div className={`${isDarkMode ? 'bg-black/95' : 'bg-slate-200/70'} absolute inset-0 backdrop-blur-3xl`} onClick={() => setIsCustomizing(false)} />
@@ -556,7 +532,6 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
           }`}>
             <h3 className={`text-[10px] font-black mb-8 text-center opacity-30 uppercase tracking-[0.5em] ${isDarkMode ? 'text-white' : 'text-slate-700'}`}>Timer Setup</h3>
 
-            {/* TOTAL SESSION SECTION */}
             <div className="mb-8">
               <h4 className={`text-[9px] font-bold mb-4 text-center opacity-60 uppercase tracking-widest ${isDarkMode ? 'text-white' : 'text-slate-700'}`}>Total Session</h4>
               <div className="flex items-center justify-center space-x-10 mb-6">
@@ -591,7 +566,6 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
               </p>
             </div>
 
-            {/* BREAK TIME SECTION */}
             <div className="mb-8">
               <h4 className={`text-[9px] font-bold mb-4 text-center opacity-60 uppercase tracking-widest ${isDarkMode ? 'text-white' : 'text-slate-700'}`}>Break Time</h4>
               <div className="flex items-center justify-center space-x-10 mb-6">
@@ -622,7 +596,6 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
               </div>
             </div>
 
-            {/* ALARM SETTINGS SECTION */}
             <div className="mb-8">
               <h4 className={`text-[9px] font-bold mb-4 text-center opacity-60 uppercase tracking-widest ${isDarkMode ? 'text-white' : 'text-slate-700'}`}>Alarm Settings</h4>
 
@@ -663,7 +636,6 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
               </div>
             </div>
 
-            {/* ACTION BUTTONS */}
             <div className="flex gap-3">
               <button
                 onClick={() => setIsCustomizing(false)}
@@ -707,42 +679,3 @@ const Timer: React.FC<TimerProps> = ({ isCustomizing, setIsCustomizing, onFocusS
 };
 
 export default Timer;
-
-// Custom styles for the volume slider
-const style = document.createElement('style');
-style.textContent = `
-  .slider::-webkit-slider-thumb {
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: white;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  }
-  
-  .slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: white;
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  }
-`;
-document.head.appendChild(style);
-
-interface TodoItem {
-  id: string;
-  text: string;
-  completed: boolean;
-}
-
-// Ensure your array filtering explicitly checks property types:
-const validTodos = rawTodos.filter(
-  (item): item is TodoItem =>
-    typeof item?.id === 'string' &&
-    typeof item?.text === 'string' &&
-    typeof item?.completed === 'boolean'
-);
