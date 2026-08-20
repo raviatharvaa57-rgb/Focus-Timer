@@ -1,6 +1,8 @@
 {
   "name": "focus-timer",
   "version": "1.0.0",
+  "description": "Focus Timer Desktop App",
+  "author": "raviatharvaa",
   "main": "electron.js",
   "scripts": {
     "dev": "vite",
@@ -21,9 +23,6 @@
     "mac": {
       "category": "public.app-category.productivity",
       "target": ["dmg"]
-    },
-    "win": {
-      "target": ["nsis"]
     }
   }
 }
