@@ -1,5 +1,6 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import type { User } from '@supabase/supabase-js';
 import { 
   Hourglass as TimerIcon, 
   AlarmClock, 
@@ -10,9 +11,6 @@ import {
   Plus,
   LogOut
 } from 'lucide-react';
-import firebase from 'firebase/compat/app';
-import 'firebase/compat/auth';
-import { auth } from './firebase';
 import { AchievementBadge, AchievementPreferences, AppTab, TaskItem } from './types';
 import Timer from './components/Timer';
 import Alarm from './components/Alarm';
@@ -26,6 +24,8 @@ import FoxMascot, { FOX_GREETING_ROTATION, FoxPoseKey } from './components/FoxMa
 import SupabaseConnectionTest from './components/SupabaseConnectionTest';
 import { FOCUS_THEMES } from './constants';
 import { useResponsiveLayout } from './src/hooks/useResponsiveLayout';
+import { supabase } from './src/lib/supabase';
+import { clearFocusSessions, loadUserData, replaceTasks, saveAchievement, saveFocusSession, saveUserSettings } from './src/lib/focusData';
 
 interface SessionRecord {
   id: string;
@@ -126,7 +126,7 @@ const App: React.FC = () => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [activeTab, setActiveTab] = useState<AppTab>('timer');
   const [previousTab, setPreviousTab] = useState<AppTab>('timer');
-  const [user, setUser] = useState<firebase.User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showProfile, setShowProfile] = useState(false);
   const [isActionActive, setIsActionActive] = useState(false);
@@ -164,6 +164,7 @@ const App: React.FC = () => {
   const [foxPose, setFoxPose] = useState<FoxPoseKey>('greetingSign');
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(defaultThemeSettings);
   const [hasLoadedThemeSettings, setHasLoadedThemeSettings] = useState(false);
+  const [hasLoadedCloudData, setHasLoadedCloudData] = useState(false);
   const [showThemePrompt, setShowThemePrompt] = useState(false);
   const [themePromptDontShowAgain, setThemePromptDontShowAgain] = useState(false);
   const hasHandledThemePromptThisSessionRef = useRef(false);
@@ -277,26 +278,99 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (!user || !hasLoadedAchievementPreferences || !hasLoadedThemeSettings || hasLoadedCloudData) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const hydrateFromSupabase = async () => {
+      try {
+        const cloudData = await loadUserData(user.id);
+        const foxSettings = (cloudData.settings?.fox_settings ?? {}) as Record<string, unknown>;
+
+        // One safe, per-user import keeps the data already stored in this browser
+        // when a Firebase/local user first enters the Supabase-backed app.
+        if (foxSettings.legacyLocalDataMigrated !== true) {
+          await saveUserSettings(user.id, {
+            dailyGoal,
+            achievementPreferences,
+            themeSettings,
+            foxSettings: { ...foxSettings, legacyLocalDataMigrated: true },
+          });
+          await replaceTasks(user.id, tasksSnapshot);
+          await Promise.all([
+            ...sessionHistory.map((session) => saveFocusSession(user.id, session)),
+            ...achievementBadges.map((badge) => saveAchievement(user.id, badge)),
+          ]);
+        } else if (!cancelled) {
+          const settings = cloudData.settings;
+          setDailyGoal(settings?.daily_goal ?? '');
+          setGoalInput(settings?.daily_goal ?? '');
+          setAchievementPreferences(normalizeAchievementPreferences(settings?.achievement_preferences ?? {}));
+          setThemeSettings({ ...defaultThemeSettings, ...(settings?.theme_settings ?? {}) });
+          setTasksSnapshot(cloudData.tasks);
+          setSessionHistory(cloudData.sessions);
+          sessionHistoryRef.current = cloudData.sessions;
+          setAchievementBadges(cloudData.badges);
+        }
+      } catch (error) {
+        console.error('Supabase user-data load failed:', error);
+      } finally {
+        if (!cancelled) setHasLoadedCloudData(true);
+      }
+    };
+
+    void hydrateFromSupabase();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    achievementBadges,
+    achievementPreferences,
+    dailyGoal,
+    hasLoadedAchievementPreferences,
+    hasLoadedCloudData,
+    hasLoadedThemeSettings,
+    sessionHistory,
+    tasksSnapshot,
+    themeSettings,
+    user,
+  ]);
+
+  useEffect(() => {
     localStorage.setItem(DAILY_GOAL_STORAGE_KEY, dailyGoal);
-  }, [dailyGoal]);
+    if (user && hasLoadedCloudData) {
+      void saveUserSettings(user.id, { dailyGoal }).catch((error) => console.error('Daily goal sync failed:', error));
+    }
+  }, [dailyGoal, hasLoadedCloudData, user]);
 
   useEffect(() => {
     if (!hasLoadedThemeSettings) {
       return;
     }
     localStorage.setItem(THEME_SETTINGS_STORAGE_KEY, JSON.stringify(themeSettings));
-  }, [themeSettings, hasLoadedThemeSettings]);
+    if (user && hasLoadedCloudData) {
+      void saveUserSettings(user.id, { themeSettings }).catch((error) => console.error('Theme sync failed:', error));
+    }
+  }, [themeSettings, hasLoadedThemeSettings, hasLoadedCloudData, user]);
 
   useEffect(() => {
     if (!hasLoadedAchievementPreferences) {
       return;
     }
     localStorage.setItem(ACHIEVEMENT_PREFS_STORAGE_KEY, JSON.stringify(achievementPreferences));
-  }, [achievementPreferences, hasLoadedAchievementPreferences]);
+    if (user && hasLoadedCloudData) {
+      void saveUserSettings(user.id, { achievementPreferences }).catch((error) => console.error('Preference sync failed:', error));
+    }
+  }, [achievementPreferences, hasLoadedAchievementPreferences, hasLoadedCloudData, user]);
 
   useEffect(() => {
     localStorage.setItem(ACHIEVEMENT_BADGES_STORAGE_KEY, JSON.stringify(achievementBadges));
-  }, [achievementBadges]);
+    if (user && hasLoadedCloudData) {
+      void Promise.all(achievementBadges.map((badge) => saveAchievement(user.id, badge))).catch((error) => console.error('Badge sync failed:', error));
+    }
+  }, [achievementBadges, hasLoadedCloudData, user]);
 
   useEffect(() => {
     if (
@@ -528,6 +602,9 @@ const App: React.FC = () => {
   const applyThemeSettings = useCallback((next: ThemeSettings, notifyReason?: 'dark' | 'light') => {
     localStorage.setItem(THEME_SETTINGS_STORAGE_KEY, JSON.stringify(next));
     setThemeSettings(next);
+    if (user) {
+      void saveUserSettings(user.id, { themeSettings: next }).catch((error) => console.error('Theme sync failed:', error));
+    }
     setThemePromptDontShowAgain(!next.promptEnabled);
 
     if (notifyReason === 'dark') {
@@ -537,7 +614,7 @@ const App: React.FC = () => {
     if (notifyReason === 'light') {
       showFoxMascot('Good morning!', 'lightMode');
     }
-  }, [showFoxMascot]);
+  }, [showFoxMascot, user]);
 
   useEffect(() => {
     const handleButtonAssist = (event: MouseEvent) => {
@@ -601,18 +678,18 @@ const App: React.FC = () => {
   }, [sessionHistory]);
 
   useEffect(() => {
-    const unsubscribe = auth.onIdTokenChanged((currentUser) => {
-      if (currentUser) {
-        const metadata = currentUser.metadata;
-        const isNewUser = metadata?.creationTime === metadata?.lastSignInTime;
-        if (isNewUser && !currentUser.emailVerified) {
-          setUser(null);
-        } else {
-          setUser(currentUser);
-        }
-      } else {
-        setUser(null);
-      }
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    void supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
       setLoading(false);
     });
 
@@ -622,7 +699,7 @@ const App: React.FC = () => {
     };
     window.addEventListener('resize', checkRes);
     checkRes();
-    return () => unsubscribe();
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   // Session timer effect
@@ -718,12 +795,15 @@ const App: React.FC = () => {
   };
 
   const handleSignOut = () => {
-    auth.signOut();
+    void supabase?.auth.signOut();
   };
 
   const applyAchievementPreferences = (next: AchievementPreferences) => {
     localStorage.setItem(ACHIEVEMENT_PREFS_STORAGE_KEY, JSON.stringify(next));
     setAchievementPreferences(next);
+    if (user) {
+      void saveUserSettings(user.id, { achievementPreferences: next }).catch((error) => console.error('Preference sync failed:', error));
+    }
     setGoalPromptDontShowAgain(!next.showGoalPrompt);
     setDailyGoalPopupDontShowAgain(!next.showDailyGoalCompletePopup);
     setTimerPopupDontShowAgain(!next.showTimerCompletionPopup);
@@ -737,6 +817,9 @@ const App: React.FC = () => {
     setAchievementPreferences((previous) => {
       const next = updater(previous);
       localStorage.setItem(ACHIEVEMENT_PREFS_STORAGE_KEY, JSON.stringify(next));
+      if (user) {
+        void saveUserSettings(user.id, { achievementPreferences: next }).catch((error) => console.error('Preference sync failed:', error));
+      }
       setGoalPromptDontShowAgain(!next.showGoalPrompt);
       setDailyGoalPopupDontShowAgain(!next.showDailyGoalCompletePopup);
       setTimerPopupDontShowAgain(!next.showTimerCompletionPopup);

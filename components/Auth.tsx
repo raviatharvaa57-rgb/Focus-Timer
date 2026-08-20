@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { auth, db } from '../firebase';
 import { Loader2, Eye, EyeOff, Mail, Key } from 'lucide-react';
 import { useResponsiveLayout } from '../src/hooks/useResponsiveLayout';
+import { supabase } from '../src/lib/supabase';
 
 const Auth: React.FC = () => {
   const { isDesktop, isMobile } = useResponsiveLayout();
@@ -40,81 +40,18 @@ const Auth: React.FC = () => {
   }, [shake]);
 
   useEffect(() => {
-    if (!verificationEmail) {
-      return;
-    }
+    if (!supabase || !verificationEmail) return;
 
-    let cancelled = false;
-
-    const hydrateVerifiedUser = async () => {
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        return;
-      }
-
-      try {
-        await currentUser.reload();
-        if (cancelled || !currentUser.emailVerified) {
-          return;
-        }
-
-        await syncUserToFirestore(currentUser, currentUser.displayName || name || undefined);
+    // Confirmation links create a session in this tab. This lets the app enter
+    // immediately when Supabase broadcasts SIGNED_IN, with no manual refresh.
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
         setVerificationEmail(null);
-      } catch (error) {
-        console.error('Verification refresh failed:', error);
-      }
-    };
-
-    const interval = setInterval(hydrateVerifiedUser, 3000);
-    hydrateVerifiedUser();
-
-    const unsubscribe = auth.onIdTokenChanged(async (currentUser) => {
-      if (!currentUser || cancelled) {
-        return;
-      }
-
-      if (!currentUser.emailVerified) {
-        return;
-      }
-
-      try {
-        await syncUserToFirestore(currentUser, currentUser.displayName || name || undefined);
-        if (!cancelled) {
-          setVerificationEmail(null);
-        }
-      } catch (error) {
-        console.error('Verified user sync failed:', error);
       }
     });
 
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-      unsubscribe();
-    };
-  }, [verificationEmail, name]);
-
-  const syncUserToFirestore = async (user: any, displayName?: string) => {
-    const userRef = db.collection('users').doc(user.uid);
-    const doc = await userRef.get();
-    
-    const finalName = displayName || user.displayName || 'Focus User';
-    
-    if (!doc.exists) {
-      await userRef.set({
-        name: finalName,
-        email: user.email,
-        photoFileName: 'default_avatar.png',
-        createdAt: new Date().toISOString()
-      });
-    } else {
-      // Force update if we have a name to ensure persistence
-      await userRef.update({
-        name: finalName,
-        updatedAt: new Date().toISOString()
-      });
-    }
-  };
+    return () => listener.subscription.unsubscribe();
+  }, [verificationEmail]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,29 +60,34 @@ const Auth: React.FC = () => {
 
     try {
       if (isResetting) {
-        await auth.sendPasswordResetEmail(email);
+        if (!supabase) throw new Error('Supabase is not configured.');
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/`,
+        });
+        if (resetError) throw resetError;
         setResetSentEmail(email);
         setIsResetting(false);
       } else if (isLogin) {
-        const cred = await auth.signInWithEmailAndPassword(email, password);
-        if (cred.user) {
-          // Ensure profile is synced on login
-          await syncUserToFirestore(cred.user);
-          localStorage.removeItem('focus_remembered_creds');
-        }
+        if (!supabase) throw new Error('Supabase is not configured.');
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) throw signInError;
+        localStorage.removeItem('focus_remembered_creds');
       } else {
         if (password !== confirmPassword) {
           throw new Error("Passwords do not match");
         }
-        const cred = await auth.createUserWithEmailAndPassword(email, password);
-        if (cred.user) {
-          // Explicitly update profile display name
-          await cred.user.updateProfile({ displayName: name });
-          // Register in Firestore immediately
-          await syncUserToFirestore(cred.user, name);
-          // Send verification email
-          await cred.user.sendEmailVerification();
-          localStorage.removeItem('focus_remembered_creds');
+        if (!supabase) throw new Error('Supabase is not configured.');
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { display_name: name.trim() || 'Focus User' },
+            emailRedirectTo: `${window.location.origin}/`,
+          },
+        });
+        if (signUpError) throw signUpError;
+        localStorage.removeItem('focus_remembered_creds');
+        if (!data.session) {
           setVerificationEmail(email);
           setLoading(false);
           return;
@@ -155,14 +97,14 @@ const Auth: React.FC = () => {
     } catch (err: any) {
       setShake(true);
       if (window.navigator.vibrate) window.navigator.vibrate([10, 30, 10]);
-      console.error("Auth error:", err.code, err.message);
+      console.error("Auth error:", err?.code, err?.message);
 
       if (isResetting) {
-        setError(err.code === 'auth/user-not-found' ? "No account found" : "Reset failed");
+        setError('Reset failed');
       } else if (isLogin) {
         setError("Invalid email or password");
       } else {
-        setError(err.code === 'auth/email-already-in-use' ? "User already exists" : err.message);
+        setError(err?.message?.includes('already registered') ? "User already exists" : err.message);
       }
     } finally {
       setLoading(false);
